@@ -1,0 +1,7 @@
+{
+	"name": "devenv",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	}
+}
