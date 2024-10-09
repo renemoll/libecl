@@ -17,8 +17,10 @@ RUN apt-get update && \
 		python3-minimal \
 		python3-pip \
 		wget \
-		xz-utils
-
+		xz-utils && \
+	apt-get autoremove -y && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 
 #
 # Install arm-gcc toolchain
@@ -47,15 +49,17 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		ninja-build \
 		make \
 		# GCC
-		gcc-${GCC_VERSION} \
-		libstdc++-14-dev \
+		g++-${GCC_VERSION} \
 		# Code analysis
 		cppcheck \
 		gcovr \
 		# IWYU
 		libclang-${CLANG_VERSION}-dev \
 		llvm-${CLANG_VERSION}-dev && \
-	pip install --break-system-packages cpplint
+	pip install --break-system-packages cpplint && \
+	apt-get autoremove -y && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 ENV PATH="$PATH:/usr/lib/llvm-${CLANG_VERSION}/bin/"
 
 #
@@ -65,8 +69,12 @@ ENV PATH="$PATH:/usr/lib/llvm-${CLANG_VERSION}/bin/"
 RUN apt-get update && apt-get install -y --no-install-recommends libclang-${CLANG_VERSION}-dev llvm-${CLANG_VERSION}-dev libsqlite3-dev && \
 	wget -qO - https://github.com/include-what-you-use/include-what-you-use/archive/refs/tags/${INCLUDE_WHAT_YOU_USE_VERSION}.tar.gz | tar xz -C /tmp && \
 	CC=clang CXX=clang++ cmake -S /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION} -B /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION}/build && \
-	cmake --build /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION}/build --target install
+	cmake --build /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION}/build --target install && \
+	apt-get purge -y libclang-${CLANG_VERSION}-dev llvm-${CLANG_VERSION}-dev libsqlite3-dev gnupg2 && \
+	apt-get autoremove -y && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-13 20 && \
-	update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-13 20 && \
+RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-14 20 && \
+	update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-14 20 && \
 	update-alternatives --install /usr/bin/python python /usr/bin/python3 10
