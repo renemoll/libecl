@@ -57,6 +57,7 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		libclang-${CLANG_VERSION}-dev \
 		llvm-${CLANG_VERSION}-dev && \
 	pip install --break-system-packages cpplint pre-commit && \
+	pre-commit install --hook-type commit-msg && \
 	apt-get autoremove -y && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
