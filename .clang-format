@@ -1,0 +1,12 @@
+---
+BasedOnStyle: Chromium
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Mozilla
+BreakConstructorInitializers: BeforeComma
+IndentWidth: 4
+InsertBraces: true
+PackConstructorInitializers: Never
+SortIncludes: CaseInsensitive
+TabWidth: 4
+UseTab: Always

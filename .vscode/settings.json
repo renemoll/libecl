@@ -1,0 +1,15 @@
+{
+	"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+	"editor.formatOnPaste": true,
+	"editor.formatOnSave": true,
+	"editor.formatOnType": true,
+	"cSpell.ignorePaths": [
+		"package-lock.json",
+		"node_modules",
+		"vscode-extension",
+		".git/objects",
+		".vscode",
+		".vscode-insiders",
+		"build"
+	]
+}
