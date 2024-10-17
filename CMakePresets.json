@@ -1,0 +1,50 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{
+			"name": "default",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"installDir": "${sourceDir}/install",
+			"cacheVariables": {
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "On",
+				"CMAKE_COMPILE_WARNING_AS_ERROR": "On"
+			}
+		},
+		{
+			"name": "host",
+			"displayName": "Configuration for host build, code analysis and unit-testing",
+			"inherits": "default",
+			"cacheVariables": {
+				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+			},
+			"generator": "Ninja Multi-Config"
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "host-debug",
+			"configuration": "Debug",
+			"configurePreset": "host"
+		}
+	],
+	"testPresets": [
+		{
+			"name": "default",
+			"hidden": true,
+			"output": {
+				"outputOnFailure": true
+			},
+			"execution": {
+				"noTestsAction": "error",
+				"stopOnFailure": false
+			}
+		},
+		{
+			"name": "host",
+			"configurePreset": "host",
+			"configuration": "Debug",
+			"inherits": "default"
+		}
+	]
+}
