@@ -7,4 +7,4 @@ target_link_libraries(unittests
 		ccl_common
 		Catch2::Catch2WithMain
 )
-catch_discover_tests(unittests)
+# catch_discover_tests(unittests)

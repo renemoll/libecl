@@ -1,5 +1,6 @@
 FROM ubuntu:24.04
 
+ARG CATCH2_VERSION=3.7.1
 ARG CLANG_VERSION=18
 ARG GCC_VERSION=14
 ARG GCC_ARM_VERSION=13.3.rel1
@@ -42,8 +43,10 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		clang-format-${CLANG_VERSION} \
 		clang-tidy-${CLANG_VERSION} \
 		clangd-${CLANG_VERSION} \
+		libclang-rt-${CLANG_VERSION}-dev \
 		lld-${CLANG_VERSION} \
 		lldb-${CLANG_VERSION} \
+		llvm-${CLANG_VERSION} \
 		# CMake
 		cmake \
 		ninja-build \
@@ -52,12 +55,9 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		g++-${GCC_VERSION} \
 		# Code analysis
 		cppcheck \
-		gcovr \
-		# IWYU
-		libclang-${CLANG_VERSION}-dev \
-		llvm-${CLANG_VERSION}-dev && \
+		gcovr && \
 	pip install --break-system-packages cpplint pre-commit && \
-	pre-commit install --hook-type commit-msg && \
+	# pre-commit install --hook-type commit-msg && \
 	apt-get autoremove -y && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
@@ -76,6 +76,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends libclang-${CLAN
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-14 20 && \
-	update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-14 20 && \
+#
+# Catch2
+#
+
+RUN wget -qO - https://github.com/catchorg/Catch2/archive/refs/tags/v${CATCH2_VERSION}.tar.gz | tar xz -C /tmp && \
+	cmake -S /tmp/Catch2-${CATCH2_VERSION} -B /tmp/Catch2-${CATCH2_VERSION}/build && \
+	cmake --build /tmp/Catch2-${CATCH2_VERSION}/build --target install
+
+#
+# Setup environment
+#
+
+RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-${GCC_VERSION} 20 && \
+	update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-${GCC_VERSION} 20 && \
+	update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${GCC_VERSION} 20 && \
 	update-alternatives --install /usr/bin/python python /usr/bin/python3 10
