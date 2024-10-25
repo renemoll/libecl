@@ -1,31 +1,59 @@
 {
-	"version": 3,
+	"version": 6,
 	"configurePresets": [
 		{
 			"name": "default",
 			"hidden": true,
 			"binaryDir": "${sourceDir}/build/${presetName}",
-			"installDir": "${sourceDir}/install",
+			"installDir": "${sourceDir}/install"
+		},
+		{
+			"name": "ninja",
+			"hidden": true,
+			"inherits": "default",
+			"generator": "Ninja"
+		},
+		{
+			"name": "debug",
+			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_EXPORT_COMPILE_COMMANDS": "On",
-				"CMAKE_COMPILE_WARNING_AS_ERROR": "On"
+				"CMAKE_BUILD_TYPE": "Debug"
 			}
 		},
 		{
-			"name": "host",
-			"displayName": "Configuration for host build, code analysis and unit-testing",
-			"inherits": "default",
+			"name": "coverage",
+			"hidden": true,
+			"inherits": "debug",
 			"cacheVariables": {
-				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
-			},
-			"generator": "Ninja Multi-Config"
+				"BOB_COVERAGE": "On"
+			}
+		},
+		{
+			"name": "ninja-debug",
+			"description": "Debug build with system compiler and Ninja",
+			"inherits": [
+				"ninja",
+				"debug"
+			]
+		},
+		{
+			"name": "ninja-coverage",
+			"description": "Debug build with system compiler and Ninja for coverage analysis",
+			"inherits": [
+				"ninja",
+				"debug",
+				"coverage"
+			]
 		}
 	],
 	"buildPresets": [
 		{
-			"name": "host-debug",
-			"configuration": "Debug",
-			"configurePreset": "host"
+			"name": "ninja-debug",
+			"configurePreset": "ninja-debug"
+		},
+		{
+			"name": "ninja-coverage",
+			"configurePreset": "ninja-coverage"
 		}
 	],
 	"testPresets": [
@@ -36,15 +64,55 @@
 				"outputOnFailure": true
 			},
 			"execution": {
-				"noTestsAction": "error",
-				"stopOnFailure": false
+				"stopOnFailure": false,
+				"scheduleRandom": true
 			}
 		},
 		{
-			"name": "host",
-			"configurePreset": "host",
-			"configuration": "Debug",
-			"inherits": "default"
+			"name": "coverage",
+			"inherits": "default",
+			"configurePreset": "ninja-coverage"
+		},
+		{
+			"name": "unittest",
+			"inherits": "default",
+			"configurePreset": "ninja-debug"
+		}
+	],
+	"workflowPresets": [
+		{
+			"name": "coverage",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-coverage"
+				},
+				{
+					"type": "build",
+					"name": "ninja-coverage"
+				},
+				{
+					"type": "test",
+					"name": "coverage"
+				}
+			]
+		},
+		{
+			"name": "unittest",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-debug"
+				},
+				{
+					"type": "test",
+					"name": "unittest"
+				}
+			]
 		}
 	]
 }

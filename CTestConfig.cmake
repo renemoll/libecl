@@ -1,0 +1,3 @@
+set(CTEST_PROJECT_NAME "ECL coverage")
+set(CTEST_BUILD_NAME "Coverage")
+set(CTEST_NIGHTLY_START_TIME "00:00:00 CET")

@@ -20,6 +20,7 @@ include(bob)
 
 if(PROJECT_IS_TOP_LEVEL)
 	find_package(Catch2 3 REQUIRED)
+	include(Catch)
 	enable_testing()
 endif()
 
