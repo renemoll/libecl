@@ -53,7 +53,10 @@
 		},
 		{
 			"name": "ninja-coverage",
-			"configurePreset": "ninja-coverage"
+			"configurePreset": "ninja-coverage",
+			"targets":[
+				"common-coverage"
+			]
 		}
 	],
 	"testPresets": [
@@ -90,10 +93,6 @@
 				{
 					"type": "build",
 					"name": "ninja-coverage"
-				},
-				{
-					"type": "test",
-					"name": "coverage"
 				}
 			]
 		},

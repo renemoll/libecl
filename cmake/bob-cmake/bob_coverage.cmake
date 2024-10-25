@@ -1,7 +1,9 @@
 
-option(BOB_COVERAGE "" Off)
+option(BOB_COVERAGE "Enable code coverage target creation" Off)
 
 if (BOB_COVERAGE)
+	find_program(GCOVR_PATH gcovr)
+
 	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 		#
 		# Following the instructions from: https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
@@ -37,3 +39,33 @@ if (BOB_COVERAGE)
 		)
 	endif()
 endif()
+
+function(bob_create_coverage_report_target)
+	if (NOT BOB_COVERAGE)
+		return()
+	endif()
+
+	set(options NONE)
+	set(oneValueArgs NAME)
+	set(multiValueArgs RUNNER)
+	cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+	set(output_folder "${PROJECT_BINARY_DIR}/coverage_${arg_NAME}")
+	bob_info("generating coverage report in: ${output_folder}")
+
+	add_custom_target(
+		${arg_NAME}
+		COMMAND
+			${arg_RUNNER}
+		COMMAND
+			${CMAKE_COMMAND} -E make_directory ${output_folder}
+		COMMAND
+			${GCOVR_PATH} -r ${PROJECT_SOURCE_DIR} --html-details --output "${output_folder}/index.html"
+		COMMAND
+			${GCOVR_PATH} -r ${PROJECT_SOURCE_DIR}
+		WORKING_DIRECTORY
+			${PROJECT_BINARY_DIR}
+		DEPENDS
+			${arg_RUNNER}
+	)
+endfunction()
