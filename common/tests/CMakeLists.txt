@@ -8,3 +8,9 @@ target_link_libraries(unittests
 		Catch2::Catch2WithMain
 )
 catch_discover_tests(unittests)
+bob_create_coverage_report_target(
+	NAME
+		common-coverage
+	RUNNER
+		unittests
+)
