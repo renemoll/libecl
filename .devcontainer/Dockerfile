@@ -53,6 +53,7 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		make \
 		# GCC
 		g++-${GCC_VERSION} \
+		gdb \
 		# Code analysis
 		cppcheck \
 		gcovr && \
