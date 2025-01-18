@@ -67,9 +67,9 @@ SCENARIO("FIFO: adding data")
 			}
 		}
 
-		WHEN("pushing data untill full")
+		WHEN("pushing data until full")
 		{
-			for (int i = 0; i < dut.capacity(); ++i) {
+			for (size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.push(i + 1));
 
 				THEN("the size increases")
@@ -90,15 +90,11 @@ SCENARIO("FIFO: adding data")
 			{
 				REQUIRE_FALSE(dut.empty());
 			}
-			THEN("pushing a new entry fails")
-			{
-				REQUIRE_FALSE(dut.push(9));
-			}
 		}
 
-		WHEN("emplacing data untill full")
+		WHEN("emplacing data until full")
 		{
-			for (int i = 0; i < dut.capacity(); ++i) {
+			for (size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.emplace(i + 1));
 
 				THEN("the size increases")
@@ -119,9 +115,41 @@ SCENARIO("FIFO: adding data")
 			{
 				REQUIRE_FALSE(dut.empty());
 			}
-			THEN("emplacing a new entry fails")
+		}
+	}
+
+	GIVEN("a full FIFO")
+	{
+		Fifo<int, 6> dut{};
+		for (size_t i = 0; i < dut.capacity(); ++i) {
+			REQUIRE(dut.push(i + 1));
+		}
+		REQUIRE(dut.size() == dut.capacity());
+		REQUIRE(dut.front() == 1);
+
+		WHEN("pushing additional data")
+		{
+			const auto result = dut.push(99);
+			THEN("push fails")
 			{
-				REQUIRE_FALSE(dut.emplace(9));
+				REQUIRE_FALSE(result);
+			}
+			THEN("the oldest entry is retained")
+			{
+				REQUIRE(dut.front() == 1);
+			}
+		}
+
+		WHEN("emplacing additional data")
+		{
+			const auto result = dut.emplace(99);
+			THEN("emplace fails")
+			{
+				REQUIRE_FALSE(result);
+			}
+			THEN("the oldest entry is overwritten")
+			{
+				REQUIRE(dut.front() == 1);
 			}
 		}
 	}
@@ -135,7 +163,11 @@ SCENARIO("FIFO: removing data")
 
 		WHEN("popping data")
 		{
-			REQUIRE_FALSE(dut.pop());
+			const auto result = dut.pop();
+			THEN("pop fails")
+			{
+				REQUIRE_FALSE(result);
+			}
 			THEN("fifo remains empty")
 			{
 				REQUIRE(dut.size() == 0);
@@ -147,8 +179,8 @@ SCENARIO("FIFO: removing data")
 	GIVEN("a FIFO contating data")
 	{
 		Fifo<uint8_t, 6> dut{};
-		for (int i = 0; i < dut.capacity(); ++i) {
-			dut.push(i + 1);
+		for (size_t i = 0; i < dut.capacity(); ++i) {
+			REQUIRE(dut.push(i + 1));
 		}
 
 		WHEN("front is called")
@@ -197,19 +229,24 @@ SCENARIO("FIFO: removing data")
 
 			THEN("FIFO is empty")
 			{
+				REQUIRE(dut.size() == 0);
 				REQUIRE(dut.empty());
 			}
 		}
 	}
 }
 
-std::atomic<int> allocations = 0;
-std::atomic<int> deallocations = 0;
+int allocations = 0;
+int deallocations = 0;
+int copied = 0;
+int moved = 0;
 
 SCENARIO("FIFO: store objects")
 {
 	allocations = 0;
 	deallocations = 0;
+	copied = 0;
+	moved = 0;
 
 	class Element
 	{
@@ -229,8 +266,21 @@ SCENARIO("FIFO: store objects")
 			deallocations++;
 		}
 
+		Element(const Element& obj)
+		: m_i{obj.m_i}
+		{
+			copied++;
+		}
+		Element(Element&& obj)
+		: m_i{obj.m_i}
+		{
+			moved++;
+		}
+
 		int m_i;
 	};
+	static_assert(std::is_copy_constructible_v<Element>);
+	static_assert(std::is_move_constructible_v<Element>);
 
 	GIVEN("an empty FIFO")
 	{
@@ -249,6 +299,9 @@ SCENARIO("FIFO: store objects")
 			THEN("number of allocations match calls to push")
 			{
 				REQUIRE(allocations == 3);
+				REQUIRE(deallocations == 3);
+				REQUIRE(copied == 0);
+				REQUIRE(moved == 3);
 			}
 
 			WHEN("calling clear")
@@ -261,17 +314,24 @@ SCENARIO("FIFO: store objects")
 				}
 				THEN("number of deallocations match the number of allocations")
 				{
-					REQUIRE(deallocations == 3);
+					REQUIRE(allocations == 3);
+					REQUIRE(deallocations == (allocations + moved));
+					REQUIRE(copied == 0);
+					REQUIRE(moved == 3);
 				}
 			}
 		}
 
 		allocations = 0;
 		deallocations = 0;
+		copied = 0;
+		moved = 0;
 
 		WHEN("creating objects in place")
 		{
-			REQUIRE(dut.emplace(6));
+			const auto* result = dut.emplace(6);
+			REQUIRE(result != nullptr);
+			REQUIRE(result->m_i == 6);
 
 			THEN("value can be retrieved")
 			{
@@ -280,6 +340,9 @@ SCENARIO("FIFO: store objects")
 			THEN("number of allocations match calls to emplace")
 			{
 				REQUIRE(allocations == 1);
+				REQUIRE(deallocations == 0);
+				REQUIRE(copied == 0);
+				REQUIRE(moved == 0);
 			}
 
 			WHEN("calling pop")
@@ -288,7 +351,10 @@ SCENARIO("FIFO: store objects")
 
 				THEN("number of deallocations match the number of allocations")
 				{
+					REQUIRE(allocations == 1);
 					REQUIRE(deallocations == 1);
+					REQUIRE(copied == 0);
+					REQUIRE(moved == 0);
 				}
 			}
 		}
@@ -299,6 +365,8 @@ SCENARIO("FIFO: store objects without default constructors")
 {
 	allocations = 0;
 	deallocations = 0;
+	copied = 0;
+	moved = 0;
 
 	class Element
 	{
@@ -313,9 +381,21 @@ SCENARIO("FIFO: store objects without default constructors")
 		{
 			deallocations++;
 		}
+		Element(const Element& obj)
+		: m_i{obj.m_i}
+		{
+			copied++;
+		}
+		Element(Element&& obj)
+		: m_i{obj.m_i}
+		{
+			moved++;
+		}
 
 		int m_i;
 	};
+	static_assert(std::is_copy_constructible_v<Element>);
+	static_assert(std::is_move_constructible_v<Element>);
 
 	GIVEN("an empty FIFO")
 	{
@@ -333,6 +413,9 @@ SCENARIO("FIFO: store objects without default constructors")
 			THEN("number of allocations match calls to push")
 			{
 				REQUIRE(allocations == 2);
+				REQUIRE(deallocations == 2);
+				REQUIRE(copied == 0);
+				REQUIRE(moved == 2);
 			}
 
 			WHEN("calling clear")
@@ -345,17 +428,24 @@ SCENARIO("FIFO: store objects without default constructors")
 				}
 				THEN("number of deallocations match the number of allocations")
 				{
-					REQUIRE(deallocations == 2);
+					REQUIRE(allocations == 2);
+					REQUIRE(deallocations == (allocations + moved));
+					REQUIRE(copied == 0);
+					REQUIRE(moved == 2);
 				}
 			}
 		}
 
 		allocations = 0;
 		deallocations = 0;
+		copied = 0;
+		moved = 0;
 
 		WHEN("creating objects in place")
 		{
-			REQUIRE(dut.emplace(6));
+			const auto* result = dut.emplace(6);
+			REQUIRE(result != nullptr);
+			REQUIRE(result->m_i == 6);
 
 			THEN("value can be retrieved")
 			{
@@ -364,6 +454,10 @@ SCENARIO("FIFO: store objects without default constructors")
 			THEN("number of allocations match calls to emplace")
 			{
 				REQUIRE(allocations == 1);
+				REQUIRE(deallocations == 0);
+				REQUIRE(copied == 0);
+				REQUIRE(moved == 0);
+
 			}
 
 			WHEN("calling pop")
@@ -372,7 +466,10 @@ SCENARIO("FIFO: store objects without default constructors")
 
 				THEN("number of deallocations match the number of allocations")
 				{
+					REQUIRE(allocations == 1);
 					REQUIRE(deallocations == 1);
+					REQUIRE(copied == 0);
+					REQUIRE(moved == 0);
 				}
 			}
 		}

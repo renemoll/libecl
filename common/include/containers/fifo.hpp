@@ -1,19 +1,18 @@
-#ifndef CCL_COMMON_FIFO_H
-#define CCL_COMMON_FIFO_H
+#ifndef ECL_COMMON_FIFO_H
+#define ECL_COMMON_FIFO_H
 
+#include <array>
 #include <atomic>
+#include <cassert>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
 
 /*!
  * FIFO buffer with fixed capacity.
- * Single producer, single consumer.
  *
- * When full, new entry are not accepted until space is made by popping the
- * oldest entries.
-s */
-
+ * This FIFO is meant for single producer/single consumer use-cases.
+ */
 namespace ecl::common {
 template <typename T, std::size_t N>
 class Fifo
@@ -21,134 +20,136 @@ class Fifo
 public:
 	using value_type = T;
 	using size_type = size_t;
-	using pointer = size_type;
-	using const_pointer = size_type;
+	using pointer = std::add_pointer_t<T>;
+	using const_pointer = std::add_pointer_t<const T>;
 	using reference = std::add_lvalue_reference_t<T>;
 	using const_reference = std::add_lvalue_reference_t<const T>;
 
+	//! \brief Returns the maximum number of elements the queue can store.
 	size_type capacity() const
 	{
-		return N;
+		return m_buffer.size() - 1;
 	}
 
-	void clear()
+	//! \brief Returns the number of elements stored in the queue.
+	size_type size() const
 	{
-		m_read.store(m_write.load());
+		const size_type write_index = m_write.load();
+		const size_type read_index = m_read.load();
+		if (write_index >= read_index) {
+			return write_index - read_index;
+		} else {
+			return m_buffer.size() - read_index + write_index;
+		}
 	}
 
+	//! \returns True when the FIFO is empty.
 	bool empty() const
 	{
-		return !m_full && m_write.load() == m_read.load();
+		return m_write.load() == m_read.load();
 	}
 
-	template <typename... Args>
-	bool emplace(Args&&... args)
-	{
-		if (m_full) {
-			return false;
-		}
-
-		const auto write = m_write.load();
-		const auto read = m_read.load();
-		const pointer next_write = (write + 1) % N;
-		::new (&m_buffer[write].m_storage) T(std::forward<Args>(args)...);
-		m_write.store(next_write);
-		m_full = next_write == read;
-		return true;
-	}
-
+	//! \returns A reference to the first element.
 	reference front()
 	{
 		assert(!empty());
 		return *m_buffer[m_read.load()].get();
 	}
 
+	//! \returns A constant reference to the first element.
 	const_reference front() const
 	{
 		assert(!empty());
 		return *m_buffer[m_read.load()].get();
 	}
 
-	bool pop()
+	template <typename... Args>
+	pointer emplace(Args&&... args)
 	{
-		const auto write = m_write.load();
-		const auto read = m_read.load();
+		const auto write_index = m_write.load();
+		const auto next_write = (write_index + 1) % m_buffer.size();
 
-		if (!m_full && write == read) {
-			return false;
+		if (next_write == m_read.load()) {
+			return nullptr;
 		}
 
-		const pointer next_read = (read + 1) % N;
-		m_read.store(next_read);
-		m_buffer[read].get()->~T();
-		m_full = false;
-		return true;
+		::new (&m_buffer[write_index].m_storage) T(std::forward<Args>(args)...);
+		m_write.store(next_write);
+		return m_buffer[write_index].get();
 	}
 
 	bool push(const value_type& value)
 	{
-		if (m_full) {
+		const size_type write_index = m_write.load();
+		const size_type next_write = (write_index + 1) % m_buffer.size();
+
+		if (next_write == m_read.load()) {
 			return false;
 		}
 
-		const auto write = m_write.load();
-		const auto read = m_read.load();
-		const pointer next_write = (write + 1) % N;
-		::new (&m_buffer[write].m_storage) T(value);
+		::new (&m_buffer[write_index].m_storage) T(value);
 		m_write.store(next_write);
-		m_full = next_write == read;
 		return true;
 	}
 
 	bool push(value_type&& value)
 	{
-		if (m_full) {
+		const size_type write_index = m_write.load();
+		const size_type next_write = (write_index + 1) % m_buffer.size();
+
+		if (next_write == m_read.load()) {
 			return false;
 		}
 
-		const auto write = m_write.load();
-		const auto read = m_read.load();
-		const pointer next_write = (write + 1) % N;
-		::new (&m_buffer[write].m_storage) T(std::move(value));
+		::new (&m_buffer[write_index].m_storage) T(std::forward<T>(value));
 		m_write.store(next_write);
-		m_full = next_write == read;
 		return true;
 	}
 
-	size_type size() const
+	bool pop()
 	{
-		if (m_full) {
-			return N;
+		const size_type read_index = m_read.load();
+		if (read_index == m_write.load()) {
+			return false;
 		}
 
-		const auto write = m_write.load();
-		const auto read = m_read.load();
-		return write >= read ? write - read : write + N - read;
+		const size_type next_read = (read_index + 1) % m_buffer.size();
+		m_read.store(next_read);
+		m_buffer[read_index].get()->~T();
+		return true;
 	}
 
-	// back?
-	// swap?
-	// peek?
+	void clear()
+	{
+		if (std::is_trivially_destructible_v<value_type>) {
+			m_read.store(0);
+			m_read.store(0);
+		} else {
+			while (!empty()) {
+				pop();
+			}
+		}
+	}
+
 private:
 	struct StorageType
 	{
-		T* get()
+		pointer get()
 		{
-			return std::launder(reinterpret_cast<T*>(m_storage));
+			return std::launder(reinterpret_cast<pointer>(m_storage));
 		}
 
-		const T* get() const
+		const_pointer get() const
 		{
-			return std::launder(reinterpret_cast<const T*>(m_storage));
+			return std::launder(reinterpret_cast<const_pointer>(m_storage));
 		}
 
 		alignas(T) std::byte m_storage[sizeof(T)];
 	};
 
-	alignas(T) StorageType m_buffer[N];
-	std::atomic<pointer> m_write{0};
-	std::atomic<pointer> m_read{0};
-	std::atomic<bool> m_full{false};
+	std::array<StorageType, N + 1> m_buffer;
+	std::atomic<size_type> m_write{0};
+	std::atomic<size_type> m_read{0};
 };
 }  // namespace ecl::common
 
