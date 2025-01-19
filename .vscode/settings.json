@@ -1,5 +1,4 @@
 {
-	"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
 	"editor.formatOnPaste": true,
 	"editor.formatOnSave": true,
 	"editor.formatOnType": true,
@@ -11,5 +10,5 @@
 		".vscode",
 		".vscode-insiders",
 		"build"
-	]
+	],
 }

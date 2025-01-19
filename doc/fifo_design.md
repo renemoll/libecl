@@ -18,17 +18,77 @@ When I talk about threads, I include interrupts as commonly used in microcontrol
 
 ## API
 
-The basic API is based on generic sequence containers as defined in the C++ STL:
+The basic API is based on generic sequence containers as defined in the C++ STL.
 
-* `(c)begin`/`(c)end` for iteration;
-* `front` to access the first element;
 * `capacity` and `size` to return the maximum and current number of elements stored;
-* `empty` to indidate if there is data in the queue;
-* `full` to indicate the buffer is full and old entries will be overwritten;
 * `clear` to reset the buffer;
 * `emplace` to create a new element in-place;
-* `push` to add a new element to the buffer;
+* `empty` to indidate if there is data in the queue;
+* `front` to access the first element;
+* `full` to indicate the buffer is full and old entries will be overwritten;
 * `pop` to remove the oldest element from the buffer;
+* `push` to add a new element to the buffer;
+
+### Producer
+
+The following API calls are meant for the producer:
+
+* `emplace` to create a new element in-place;
+* `full` to indicate the buffer is full and old entries will be overwritten;
+* `push` to add a new element to the buffer;
+
+```
+@startuml
+autoactivate on
+
+participant Producer as p
+database    FIFO     as fifo
+participant Consumer as c
+
+alt FIFO has space available
+  p -> fifo: full()
+  return False
+  p -> fifo: push(data)
+  return True
+else FIFO is full
+  p -> fifo: full
+  return True
+end
+@enduml
+```
+
+### Consumer
+
+The following API calls are meant for the consumer:
+
+* `front` to access the first element;
+* `empty` to indidate if there is data in the queue;
+* `pop` to remove the oldest element from the buffer;
+
+```
+@startuml
+autoactivate on
+
+participant Producer as p
+database    FIFO     as fifo
+participant Consumer as c
+
+alt FIFO has data available
+  loop While not empty
+    c -> fifo: empty()
+    return False
+    c -> fifo: front()
+    return data
+    c -> fifo: pop()
+    return
+  end
+else FIFO is empty
+  c -> fifo: empty()
+  return True
+end
+
+@enduml
+```
 
 ## Details
 
