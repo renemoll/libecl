@@ -61,7 +61,7 @@ configure_file(${BOB_USER_VERSION_HEADER} version.h)
 # include(bob_compiler)
 include(bob_coverage)
 # include(bob_options)
-# include(bob_clang_tidy)
+include(bob_clang_tidy)
 # include(bob_cppcheck)
 
 # add_library(bob_interface INTERFACE)

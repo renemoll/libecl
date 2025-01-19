@@ -55,7 +55,7 @@
 			"name": "ninja-coverage",
 			"configurePreset": "ninja-coverage",
 			"targets":[
-				"common-coverage"
+				"ecl-coverage"
 			]
 		}
 	],

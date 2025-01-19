@@ -1,5 +1,5 @@
-#ifndef ECL_COMMON_FIFO_H
-#define ECL_COMMON_FIFO_H
+#ifndef ECL_CONTAINERS_FIFO_H
+#define ECL_CONTAINERS_FIFO_H
 
 #include <array>
 #include <atomic>
@@ -13,7 +13,7 @@
  *
  * This FIFO is meant for single producer/single consumer use-cases.
  */
-namespace ecl::common {
+namespace ecl::containers {
 template <typename T, std::size_t N>
 class Fifo
 {
@@ -151,6 +151,6 @@ private:
 	std::atomic<size_type> m_write{0};
 	std::atomic<size_type> m_read{0};
 };
-}  // namespace ecl::common
+}  // namespace ecl::containers
 
 #endif

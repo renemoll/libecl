@@ -4,13 +4,13 @@ add_executable(unittests
 )
 target_link_libraries(unittests
 	PRIVATE
-		ccl_common
+		ecl
 		Catch2::Catch2WithMain
 )
 catch_discover_tests(unittests)
 bob_create_coverage_report_target(
 	NAME
-		common-coverage
+		ecl-coverage
 	RUNNER
 		unittests
 )
