@@ -1,11 +1,11 @@
-
-#include <atomic>
-#include <catch2/catch_all.hpp>
-
-#include "catch2/catch_test_macros.hpp"
 #include "containers/fifo.hpp"
 
-using namespace ecl::common;
+#include <cstdint>
+#include <type_traits>
+
+#include "catch2/catch_test_macros.hpp"
+
+using namespace ecl::containers;
 
 static_assert(std::is_default_constructible_v<Fifo<uint8_t, 6>>);
 static_assert(std::is_nothrow_constructible_v<Fifo<uint8_t, 6>>);

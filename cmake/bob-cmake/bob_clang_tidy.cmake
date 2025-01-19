@@ -31,3 +31,12 @@ function(bob_configure_clang_tidy TARGET)
 		)
 	endif()
 endfunction()
+
+
+function(bob_disable_clang_tidy TARGET)
+	set_target_properties(${TARGET}
+		PROPERTIES
+			C_CLANG_TIDY ""
+			CXX_CLANG_TIDY ""
+	)
+endfunction()

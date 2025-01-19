@@ -18,10 +18,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(bob)
 
+add_subdirectory(src)
+
 if(PROJECT_IS_TOP_LEVEL)
 	find_package(Catch2 3 REQUIRED)
 	include(Catch)
 	enable_testing()
+	add_subdirectory(test)
 endif()
-
-add_subdirectory(common)
