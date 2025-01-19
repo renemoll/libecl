@@ -40,6 +40,10 @@ SCENARIO("FIFO: initialization")
 		{
 			REQUIRE(dut.empty());
 		}
+		THEN("fifo is not full")
+		{
+			REQUIRE_FALSE(dut.full());
+		}
 	}
 }
 
@@ -64,6 +68,10 @@ SCENARIO("FIFO: adding data")
 			THEN("fifo is not empty")
 			{
 				REQUIRE_FALSE(dut.empty());
+			}
+			THEN("fifo is not full")
+			{
+				REQUIRE_FALSE(dut.full());
 			}
 		}
 
@@ -90,6 +98,10 @@ SCENARIO("FIFO: adding data")
 			{
 				REQUIRE_FALSE(dut.empty());
 			}
+			THEN("fifo is full")
+			{
+				REQUIRE(dut.full());
+			}
 		}
 
 		WHEN("emplacing data until full")
@@ -115,6 +127,10 @@ SCENARIO("FIFO: adding data")
 			{
 				REQUIRE_FALSE(dut.empty());
 			}
+			THEN("fifo is full")
+			{
+				REQUIRE(dut.full());
+			}
 		}
 	}
 
@@ -126,6 +142,7 @@ SCENARIO("FIFO: adding data")
 		}
 		REQUIRE(dut.size() == dut.capacity());
 		REQUIRE(dut.front() == 1);
+		REQUIRE(dut.full());
 
 		WHEN("pushing additional data")
 		{
@@ -176,12 +193,13 @@ SCENARIO("FIFO: removing data")
 		}
 	}
 
-	GIVEN("a FIFO contating data")
+	GIVEN("a FIFO full of data")
 	{
 		Fifo<uint8_t, 6> dut{};
 		for (size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(i + 1));
 		}
+		REQUIRE(dut.full());
 
 		WHEN("front is called")
 		{
@@ -206,6 +224,10 @@ SCENARIO("FIFO: removing data")
 			THEN("size decreases")
 			{
 				REQUIRE(dut.size() < dut.capacity());
+			}
+			THEN("fifo is not full")
+			{
+				REQUIRE_FALSE(dut.full());
 			}
 		}
 
@@ -267,12 +289,12 @@ SCENARIO("FIFO: store objects")
 		}
 
 		Element(const Element& obj)
-		: m_i{obj.m_i}
+			: m_i{obj.m_i}
 		{
 			copied++;
 		}
 		Element(Element&& obj)
-		: m_i{obj.m_i}
+			: m_i{obj.m_i}
 		{
 			moved++;
 		}
@@ -382,12 +404,12 @@ SCENARIO("FIFO: store objects without default constructors")
 			deallocations++;
 		}
 		Element(const Element& obj)
-		: m_i{obj.m_i}
+			: m_i{obj.m_i}
 		{
 			copied++;
 		}
 		Element(Element&& obj)
-		: m_i{obj.m_i}
+			: m_i{obj.m_i}
 		{
 			moved++;
 		}
@@ -457,7 +479,6 @@ SCENARIO("FIFO: store objects without default constructors")
 				REQUIRE(deallocations == 0);
 				REQUIRE(copied == 0);
 				REQUIRE(moved == 0);
-
 			}
 
 			WHEN("calling pop")

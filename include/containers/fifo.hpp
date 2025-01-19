@@ -8,12 +8,12 @@
 #include <type_traits>
 #include <utility>
 
+namespace ecl::containers {
 /*!
  * FIFO buffer with fixed capacity.
  *
  * This FIFO is meant for single producer/single consumer use-cases.
  */
-namespace ecl::containers {
 template <typename T, std::size_t N>
 class Fifo
 {
@@ -43,26 +43,56 @@ public:
 		}
 	}
 
-	//! \returns True when the FIFO is empty.
+	/*!
+	 * \returns True when the FIFO is empty.
+	 * \note    To be used by the consumer.
+	 */
 	bool empty() const
 	{
 		return m_write.load() == m_read.load();
 	}
 
-	//! \returns A reference to the first element.
+	/*!
+	 * \returns True when the FIFO is full and will not accept new data.
+	 * \note    To be used by the producer.
+	 */
+	bool full() const
+	{
+		const size_type write_index = m_write.load();
+		const size_type read_index = m_read.load();
+
+		if (write_index >= read_index) {
+			return m_buffer.size() + read_index == write_index + 1;
+		}
+
+		return read_index == write_index + 1;
+	}
+
+	/*!
+	 * \returns A reference to the first element.
+	 * \note    To be used by the consumer.
+	 */
 	reference front()
 	{
 		assert(!empty());
 		return *m_buffer[m_read.load()].get();
 	}
 
-	//! \returns A constant reference to the first element.
+	/*!
+	 * \returns A constant reference to the first element.
+	 * \note    To be used by the consumer.
+	 */
 	const_reference front() const
 	{
 		assert(!empty());
 		return *m_buffer[m_read.load()].get();
 	}
 
+	/*!
+	 * \brief   Constructs a new object, in-place, in an empty slot within the
+	 * FIFO. \returns A pointer to the newly created object when space was
+	 * available, nullptr otherwise. \note    To be used by the producer.
+	 */
 	template <typename... Args>
 	pointer emplace(Args&&... args)
 	{
@@ -78,6 +108,11 @@ public:
 		return m_buffer[write_index].get();
 	}
 
+	/*!
+	 * \brief   Pushes the given \a value into an empty slot within the FIFO.
+	 * \returns True when \a valve is accepted, false if the FIFO is full.
+	 * \note    To be used by the producer.
+	 */
 	bool push(const value_type& value)
 	{
 		const size_type write_index = m_write.load();
@@ -92,6 +127,11 @@ public:
 		return true;
 	}
 
+	/*!
+	 * \brief   Pushes the given \a value into an empty slot within the FIFO.
+	 * \returns True when \a valve is accepted, false if the FIFO is full.
+	 * \note    To be used by the producer.
+	 */
 	bool push(value_type&& value)
 	{
 		const size_type write_index = m_write.load();
@@ -106,6 +146,10 @@ public:
 		return true;
 	}
 
+	/*!
+	 * \returns True when the oldest element is removed from the FIFO.
+	 * \note    To be used by the consumer.
+	 */
 	bool pop()
 	{
 		const size_type read_index = m_read.load();
@@ -119,6 +163,7 @@ public:
 		return true;
 	}
 
+	//! \brief Resets the FIFO, any objects contained are deconstructed.
 	void clear()
 	{
 		if (std::is_trivially_destructible_v<value_type>) {
