@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.21)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/bob-cmake")
 
-project(components
+project(libecl
 	LANGUAGES
 		CXX
 )
@@ -21,8 +21,6 @@ include(bob)
 add_subdirectory(src)
 
 if(PROJECT_IS_TOP_LEVEL)
-	find_package(Catch2 3 REQUIRED)
-	include(Catch)
 	enable_testing()
 	add_subdirectory(test)
 endif()

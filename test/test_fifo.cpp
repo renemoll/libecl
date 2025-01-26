@@ -1,4 +1,4 @@
-#include "containers/fifo.hpp"
+#include "libecl/containers/fifo.hpp"
 
 #include <cstdint>
 #include <type_traits>
@@ -13,20 +13,20 @@ static_assert(std::is_nothrow_constructible_v<Fifo<uint8_t, 6>>);
 static_assert(std::is_default_constructible_v<Fifo<uint8_t, 6>>);
 static_assert(std::is_nothrow_default_constructible_v<Fifo<uint8_t, 6>>);
 
-static_assert(std::is_copy_constructible_v<Fifo<uint8_t, 6>> == false);
-static_assert(std::is_copy_assignable_v<Fifo<uint8_t, 6>> == false);
+static_assert(!std::is_copy_constructible_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_copy_assignable_v<Fifo<uint8_t, 6>>);
 
-static_assert(std::is_move_constructible_v<Fifo<uint8_t, 6>> == false);
-static_assert(std::is_nothrow_move_constructible_v<Fifo<uint8_t, 6>> == false);
+static_assert(!std::is_move_constructible_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_nothrow_move_constructible_v<Fifo<uint8_t, 6>>);
 
-static_assert(std::is_move_assignable_v<Fifo<uint8_t, 6>> == false);
-static_assert(std::is_nothrow_move_assignable_v<Fifo<uint8_t, 6>> == false);
+static_assert(!std::is_move_assignable_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_nothrow_move_assignable_v<Fifo<uint8_t, 6>>);
 
 SCENARIO("FIFO: initialization")
 {
 	WHEN("constructing a FIFO")
 	{
-		Fifo<uint8_t, 6> dut{};
+		const Fifo<uint8_t, 6> dut{};
 
 		THEN("capacity matches with the fixed size")
 		{
@@ -159,7 +159,7 @@ SCENARIO("FIFO: adding data")
 
 		WHEN("emplacing additional data")
 		{
-			const auto result = dut.emplace(99);
+			const auto* result = dut.emplace(99);
 			THEN("emplace fails")
 			{
 				REQUIRE_FALSE(result);
@@ -265,11 +265,6 @@ int moved = 0;
 
 SCENARIO("FIFO: store objects")
 {
-	allocations = 0;
-	deallocations = 0;
-	copied = 0;
-	moved = 0;
-
 	class Element
 	{
 	public:
@@ -278,11 +273,13 @@ SCENARIO("FIFO: store objects")
 		{
 			allocations++;
 		}
-		Element(int i)
+
+		explicit Element(int i)
 			: m_i{i}
 		{
 			allocations++;
 		}
+
 		~Element()
 		{
 			deallocations++;
@@ -293,11 +290,16 @@ SCENARIO("FIFO: store objects")
 		{
 			copied++;
 		}
-		Element(Element&& obj)
+
+		Element& operator=(const Element& other) = default;
+
+		Element(Element&& obj) noexcept
 			: m_i{obj.m_i}
 		{
 			moved++;
 		}
+
+		Element& operator=(Element&& other) noexcept = default;
 
 		int m_i;
 	};
@@ -385,34 +387,41 @@ SCENARIO("FIFO: store objects")
 
 SCENARIO("FIFO: store objects without default constructors")
 {
-	allocations = 0;
-	deallocations = 0;
-	copied = 0;
-	moved = 0;
-
 	class Element
 	{
 	public:
-		Element() = delete;
-		Element(int i)
+		Element()
+			: m_i{0}
+		{
+			allocations++;
+		}
+
+		explicit Element(int i)
 			: m_i{i}
 		{
 			allocations++;
 		}
+
 		~Element()
 		{
 			deallocations++;
 		}
+
 		Element(const Element& obj)
 			: m_i{obj.m_i}
 		{
 			copied++;
 		}
-		Element(Element&& obj)
+
+		Element& operator=(const Element& other) = default;
+
+		Element(Element&& obj) noexcept
 			: m_i{obj.m_i}
 		{
 			moved++;
 		}
+
+		Element& operator=(Element&& other) noexcept = default;
 
 		int m_i;
 	};
