@@ -169,6 +169,28 @@ SCENARIO("FIFO: adding data")
 				REQUIRE(dut.front() == 1);
 			}
 		}
+
+		WHEN("only after data is popped")
+		{
+			REQUIRE(dut.pop());
+			REQUIRE(dut.size() == (dut.capacity() - 1));
+			REQUIRE_FALSE(dut.full());
+
+			REQUIRE(dut.pop());
+			REQUIRE(dut.size() == (dut.capacity() - 2));
+			REQUIRE_FALSE(dut.full());
+
+			THEN("new data can be pushed to the queue")
+			{
+				REQUIRE(dut.push(dut.capacity()));
+				REQUIRE(dut.size() == (dut.capacity() - 1));
+				REQUIRE_FALSE(dut.full());
+
+				REQUIRE(dut.push(dut.capacity() + 1));
+				REQUIRE(dut.size() == dut.capacity());
+				REQUIRE(dut.full());
+			}
+		}
 	}
 }
 
