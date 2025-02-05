@@ -1,9 +1,10 @@
 
 add_library(ecl
-	INTERFACE
+	STATIC
+		"${CMAKE_CURRENT_LIST_DIR}/communication/bus_scheduler.cpp"
 )
 target_include_directories(ecl
-	INTERFACE
+	PUBLIC
 		"${PROJECT_SOURCE_DIR}/include"
 )
 

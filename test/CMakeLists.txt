@@ -2,6 +2,7 @@ find_package(Catch2 3 REQUIRED)
 include(Catch)
 
 add_executable(unittests
+	test_bus_scheduler.cpp
 	test_fifo.cpp
 )
 
