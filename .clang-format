@@ -4,6 +4,7 @@ AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: Empty
 BreakBeforeBraces: Mozilla
 BreakConstructorInitializers: BeforeComma
+ColumnLimit: 120
 IndentWidth: 4
 InsertBraces: true
 PackConstructorInitializers: Never
