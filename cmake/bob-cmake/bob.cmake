@@ -58,10 +58,13 @@ configure_file(${BOB_USER_VERSION_HEADER} version.h)
 # Project template
 #
 
-# include(bob_compiler)
+include(bob_compiler_id)
+include(bob_compiler_configuration)
+
+include(bob_compiler_warnings)
 include(bob_coverage)
-# include(bob_options)
 include(bob_clang_tidy)
+# include(bob_options)
 # include(bob_cppcheck)
 
 # add_library(bob_interface INTERFACE)
