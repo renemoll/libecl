@@ -9,4 +9,5 @@ target_include_directories(ecl
 
 if(PROJECT_IS_TOP_LEVEL)
 	bob_configure_clang_tidy(ecl)
+	bob_configure_compiler_warnings(ecl)
 endif()
