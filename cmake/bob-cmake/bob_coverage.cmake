@@ -1,3 +1,10 @@
+#
+# CMake module to generate code coverage reports
+#
+# To generate a report:
+# 1. Enable BOB_COVERAGE
+# 2. Call `bob_create_coverage_report` with a unit-test runner.
+#
 
 option(BOB_COVERAGE "Enable code coverage target creation" Off)
 
@@ -13,6 +20,7 @@ if (BOB_COVERAGE)
 		find_program(LLVM_COV_APP llvm-cov)
 
 		add_compile_options(
+			-O0							# Disable optimizations when generating test-coverage
 			# -fprofile-arcs
 			# -ftest-coverage
 			# -fno-elide-constructors
@@ -47,7 +55,7 @@ if (BOB_COVERAGE)
 	endif()
 endif()
 
-function(bob_create_coverage_report_target)
+function(bob_create_coverage_report)
 	if (NOT BOB_COVERAGE)
 		return()
 	endif()

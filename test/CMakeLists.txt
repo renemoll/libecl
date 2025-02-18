@@ -12,7 +12,7 @@ target_link_libraries(unittests
 )
 
 catch_discover_tests(unittests)
-bob_create_coverage_report_target(
+bob_create_coverage_report(
 	NAME
 		ecl-coverage
 	RUNNER
