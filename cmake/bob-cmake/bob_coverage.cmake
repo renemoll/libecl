@@ -16,14 +16,14 @@ if (BOB_COVERAGE)
 			# -fprofile-arcs
 			# -ftest-coverage
 			# -fno-elide-constructors
-			-fprofile-instr-generate	# Generate instrumented code to collect execut6ion counts into default.profraw file
+			-fprofile-instr-generate	# Generate instrumented code to collect execution counts into default.profraw file
 			-fcoverage-mapping			# Generate coverage mapping to enable code coverage analysis
 			-fcoverage-mcdc				# Modified Condition/Decision Coverage (MC/DC)
 		)
 		add_link_options(
-			-fprofile-instr-generate	# Generate instrumented code to collect execut6ion counts into default.profraw file
+			-fprofile-instr-generate	# Generate instrumented code to collect execution counts into default.profraw file
 		)
-	else()
+	elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		#
 		# Based on: https://gcovr.com/en/stable/guide/compiling.html
 		#
@@ -42,6 +42,8 @@ if (BOB_COVERAGE)
 		add_link_options(
 			--coverage
 		)
+	else()
+		bob_error("unsupported compiler")
 	endif()
 endif()
 
@@ -88,7 +90,7 @@ function(bob_create_coverage_report_target)
 			DEPENDS
 				${arg_RUNNER}
 		)
-	else()
+	elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		add_custom_target(
 			${arg_NAME}
 			COMMAND
@@ -104,5 +106,7 @@ function(bob_create_coverage_report_target)
 			DEPENDS
 				${arg_RUNNER}
 		)
+	else()
+		bob_error("unsupported compiler")
 	endif()
 endfunction()

@@ -9,14 +9,19 @@ option(BOB_CLANG_TIDY "Execute `clang-tidy`" On)
 #
 
 function(bob_configure_clang_tidy TARGET)
+	if (BOB_COVERAGE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		bob_info("disabling clang-tidy due to code coverage generation")
+		return()
+	endif()
+
 	find_program(BOB_CLANG_TIDY_EXE NAMES clang-tidy)
 
 	if (NOT BOB_CLANG_TIDY_EXE AND BOB_CLANG_TIDY)
-		message(WARNING "[Bob] request for clang-tidy failed as the executable could not be found.")
+		bob_error("request for clang-tidy failed as the executable could not be found")
 	endif()
 
 	if (BOB_CLANG_TIDY_EXE AND BOB_CLANG_TIDY)
-		message(STATUS "[Bob] enabling clang-tidy for '${TARGET}'.")
+		bob_info("enabling clang-tidy for '${TARGET}'")
 
 		set(CLANG_TIDY_CMD
 			"${BOB_CLANG_TIDY_EXE}"
