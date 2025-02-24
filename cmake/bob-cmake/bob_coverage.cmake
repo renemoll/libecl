@@ -9,7 +9,7 @@
 option(BOB_COVERAGE "Enable code coverage target creation" Off)
 
 if (BOB_COVERAGE)
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	if (BOB_COMPILER_CLANG)
 		#
 		# Following the instructions from: https://clang.llvm.org/docs/SourceBasedCodeCoverage.html
 		#
@@ -31,7 +31,7 @@ if (BOB_COVERAGE)
 		add_link_options(
 			-fprofile-instr-generate	# Generate instrumented code to collect execution counts into default.profraw file
 		)
-	elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	elseif (BOB_COMPILER_GCC)
 		#
 		# Based on: https://gcovr.com/en/stable/guide/compiling.html
 		#
@@ -68,7 +68,7 @@ function(bob_create_coverage_report)
 	set(output_folder "${PROJECT_BINARY_DIR}/coverage_${arg_NAME}")
 	bob_info("generating coverage report in: ${output_folder}")
 
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	if (BOB_COMPILER_CLANG)
 		add_custom_target(
 			${arg_NAME}
 			COMMAND
@@ -98,7 +98,7 @@ function(bob_create_coverage_report)
 			DEPENDS
 				${arg_RUNNER}
 		)
-	elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	elseif (BOB_COMPILER_GCC)
 		add_custom_target(
 			${arg_NAME}
 			COMMAND

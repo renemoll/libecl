@@ -6,6 +6,11 @@ if (BOB_COMPILER_CLANG)
 	option(BOB_CLANG_WARN_EVERYTHING "Enable `-Weverything` for Clang" Off)
 endif()
 
+#
+# bob_configure_compiler_warnings
+#
+# Apply compiler checks (warnings) for the given `TARGET`.
+#
 function(bob_configure_compiler_warnings TARGET)
 	set(WARNINGS "")
 	set(C_WARNINGS "")
@@ -83,9 +88,7 @@ function(bob_configure_compiler_warnings TARGET)
 			# (Type) conversion
 			-Wuseless-cast						# Warn about casting to the same type.
 		)
-	endif()
-
-	if (BOB_COMPILER_CLANG)
+	elseif (BOB_COMPILER_CLANG)
 		list(APPEND WARNINGS
 			# (Type) conversion
 			-Wshift-sign-overflow				# Warn about left shifting a 1 into the sign bit.
@@ -103,6 +106,8 @@ function(bob_configure_compiler_warnings TARGET)
 				-Weverything					# Enable all diagnostic warnings.
 			)
 		endif()
+	else()
+		bob_error("unsupported compiler.")
 	endif()
 
 	target_compile_options(${TARGET}
