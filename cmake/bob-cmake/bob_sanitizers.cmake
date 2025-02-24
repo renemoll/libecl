@@ -1,0 +1,86 @@
+#
+# Compiler sanitizer configuration
+#
+# Todo:
+# - Hardware-assisted AddressSanitizer 
+#
+# Note:
+# - Disabled MemorySanitizer as this requires the complete code base
+#   (inc external dependencies such as libc++) to be compiled with it.
+#
+
+option(BOB_SANITIZE_ADDRESS "Enable AddressSanitizer" On)
+option(BOB_SANITIZE_LEAK "Enable LeakSanitizer" On)
+option(BOB_SANITIZE_UNDEFINED "Enable UndefinedBehaviorSanitizer" On)
+# option(BOB_SANITIZE_MEMORY "Enable MemorySanitizer" Off)
+option(BOB_SANITIZE_THREAD "Enable ThreadSanitizer" Off)
+
+#
+# bob_configure_sanitizers
+#
+# Enable compiler sanitizers for the given `TARGET`.
+#
+function(bob_configure_sanitizers TARGET)
+
+	#
+	# Determine which sanitizers to enable
+	#
+	set(SANITIZERS "")
+
+	if (BOB_SANITIZE_ADDRESS)
+		list(APPEND SANITIZERS "address")
+	endif()
+
+	if (BOB_SANITIZE_LEAK)
+		list(APPEND SANITIZERS "leak")
+	endif()
+
+	if (BOB_SANITIZE_UNDEFINED)
+		list(APPEND SANITIZERS "undefined")
+	endif()
+
+	if (BOB_SANITIZE_THREAD)
+		if("address" IN_LIST SANITIZERS OR "leak" IN_LIST SANITIZERS)
+			bob_error("ThreadSanitizer cannot be combined with AddressSanitizer or LeakSanitizer")
+		else()
+			list(APPEND SANITIZERS "thread")
+		endif()
+	endif()
+
+	# if (BOB_SANITIZE_MEMORY)
+	# 	if (BOB_COMPILER_CLANG)
+	# 		list(APPEND SANITIZERS "memory")
+	# 	else()
+	# 		bob_info("MemorySanitizer is only supported by Clang")
+	# 	endif()
+	# endif()
+
+	if (SANITIZERS)
+		#
+		# Update compiler options
+		#
+
+		if (NOT BOB_COVERAGE)
+			add_compile_options(
+				-O1						# Recommended for "reasonable performance"
+				-fno-omit-frame-pointer # For better stack traces
+				-g						# For file names and line numbers
+			)
+		endif()
+
+		#
+		# Add the sanitizer(s) to the given `TARGET`
+		#
+
+		list(JOIN SANITIZERS "," LIST_OF_SANITIZERS)
+
+		target_compile_options(${TARGET}
+			INTERFACE
+				-fsanitize=${LIST_OF_SANITIZERS}
+		)
+		target_link_options(${TARGET}
+			INTERFACE
+				-fsanitize=${LIST_OF_SANITIZERS}
+		)
+	endif()
+endfunction()
