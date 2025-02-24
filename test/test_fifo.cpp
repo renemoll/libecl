@@ -51,7 +51,7 @@ SCENARIO("FIFO: adding data")
 {
 	GIVEN("an empty FIFO")
 	{
-		Fifo<int, 6> dut{};
+		Fifo<std::size_t, 6> dut{};
 
 		WHEN("pushing a single element")
 		{
@@ -77,7 +77,7 @@ SCENARIO("FIFO: adding data")
 
 		WHEN("pushing data until full")
 		{
-			for (size_t i = 0; i < dut.capacity(); ++i) {
+			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.push(i + 1));
 
 				THEN("the size increases")
@@ -106,7 +106,7 @@ SCENARIO("FIFO: adding data")
 
 		WHEN("emplacing data until full")
 		{
-			for (size_t i = 0; i < dut.capacity(); ++i) {
+			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.emplace(i + 1));
 
 				THEN("the size increases")
@@ -136,8 +136,8 @@ SCENARIO("FIFO: adding data")
 
 	GIVEN("a full FIFO")
 	{
-		Fifo<int, 6> dut{};
-		for (size_t i = 0; i < dut.capacity(); ++i) {
+		Fifo<std::size_t, 6> dut{};
+		for (std::size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(i + 1));
 		}
 		REQUIRE(dut.size() == dut.capacity());
@@ -159,7 +159,7 @@ SCENARIO("FIFO: adding data")
 
 		WHEN("emplacing additional data")
 		{
-			const auto* result = dut.emplace(99);
+			const auto* result = dut.emplace(99U);
 			THEN("emplace fails")
 			{
 				REQUIRE_FALSE(result);
@@ -218,8 +218,8 @@ SCENARIO("FIFO: removing data")
 	GIVEN("a FIFO full of data")
 	{
 		Fifo<uint8_t, 6> dut{};
-		for (size_t i = 0; i < dut.capacity(); ++i) {
-			REQUIRE(dut.push(i + 1));
+		for (std::size_t i = 0; i < dut.capacity(); ++i) {
+			REQUIRE(dut.push(static_cast<uint8_t>(i + 1)));
 		}
 		REQUIRE(dut.full());
 
@@ -257,7 +257,7 @@ SCENARIO("FIFO: removing data")
 		{
 			REQUIRE(dut.size() == 6);
 
-			for (int i = 0; i < dut.capacity(); ++i) {
+			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				THEN("front retruns the oldest entry")
 				{
 					REQUIRE(dut.front() == (i + 1));

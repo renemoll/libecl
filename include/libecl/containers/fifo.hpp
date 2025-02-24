@@ -103,7 +103,7 @@ public:
 			return nullptr;
 		}
 
-		::new (&m_buffer[write_index].m_storage) T(std::forward<Args>(args)...);
+		::new (m_buffer[write_index].address()) T(std::forward<Args>(args)...);
 		m_write.store(next_write);
 		return m_buffer[write_index].get();
 	}
@@ -122,7 +122,7 @@ public:
 			return false;
 		}
 
-		::new (&m_buffer[write_index].m_storage) T(value);
+		::new (m_buffer[write_index].address()) T(value);
 		m_write.store(next_write);
 		return true;
 	}
@@ -141,7 +141,7 @@ public:
 			return false;
 		}
 
-		::new (&m_buffer[write_index].m_storage) T(std::forward<T>(value));
+		::new (m_buffer[write_index].address()) T(std::forward<T>(value));
 		m_write.store(next_write);
 		return true;
 	}
@@ -179,14 +179,26 @@ public:
 private:
 	struct StorageType
 	{
+		void* address()
+		{
+			return static_cast<void*>(&m_storage);
+		}
+
 		pointer get()
 		{
-			return std::launder(reinterpret_cast<pointer>(m_storage));
+			return static_cast<pointer>(address());
+			// return std::launder(reinterpret_cast<pointer>(&m_storage));
+		}
+
+		const void* address() const
+		{
+			return static_cast<const void*>(&m_storage);
 		}
 
 		const_pointer get() const
 		{
-			return std::launder(reinterpret_cast<const_pointer>(m_storage));
+			return static_cast<const_pointer>(address());
+			// return std::launder(reinterpret_cast<const_pointer>(&m_storage));
 		}
 
 		alignas(T) std::byte m_storage[sizeof(T)];
