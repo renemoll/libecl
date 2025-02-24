@@ -64,6 +64,7 @@ include(bob_compiler_configuration)
 include(bob_compiler_warnings)
 include(bob_coverage)
 include(bob_clang_tidy)
+include(bob_sanitizers)
 # include(bob_options)
 # include(bob_cppcheck)
 
