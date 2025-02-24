@@ -4,7 +4,7 @@ option(BOB_USE_EXCEPTIONS		"Allow exceptions" OFF)
 option(BOB_USE_RTTI				"Generate run-time type identification (RTTI)" OFF)
 
 function(bob_configure_options target)
-	if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+	if(BOB_COMPILER_GCC OR BOB_COMPILER_CLANG)
 		target_compile_options(${target}
 			INTERFACE
 				$<$<BOOL:${BOB_USE_DEBUG_SYMBOLS}>:-gdwarf-5>
