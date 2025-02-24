@@ -3,7 +3,14 @@
 #
 
 # Generate colourized diagnostic warnings.
-add_compile_options(
-    $<BOB_COMPILER_CLANG:-fcolor-diagnostics>
-    $<BOB_COMPILER_GCC:-fdiagnostics-color=always>
-)
+if (BOB_COMPILER_CLANG)
+	add_compile_options(
+		-fcolor-diagnostics
+	)
+elseif(BOB_COMPILER_GCC)
+	add_compile_options(
+		-fdiagnostics-color=always
+	)
+else()
+	bob_error("unsupported compiler.")
+endif()

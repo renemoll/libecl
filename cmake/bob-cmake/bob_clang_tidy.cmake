@@ -5,11 +5,12 @@
 option(BOB_CLANG_TIDY "Execute `clang-tidy`" On)
 
 #
+# bob_configure_clang_tidy
+#
 # Configure `clang-tidy` for the given `TARGET`.
 #
-
 function(bob_configure_clang_tidy TARGET)
-	if (BOB_COVERAGE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	if (BOB_COVERAGE AND BOB_COMPILER_GCC)
 		bob_info("disabling clang-tidy due to code coverage generation")
 		return()
 	endif()
