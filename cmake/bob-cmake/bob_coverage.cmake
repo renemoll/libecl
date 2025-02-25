@@ -16,8 +16,8 @@ if (BOB_COVERAGE)
 
 		bob_info("generating llvm coverage report.")
 
-		find_program(LLVM_PROFDATA_APP llvm-profdata)
-		find_program(LLVM_COV_APP llvm-cov)
+		find_program(LLVM_PROFDATA_EXE llvm-profdata)
+		find_program(LLVM_COV_EXE llvm-cov)
 
 		add_compile_options(
 			-O0							# Disable optimizations when generating test-coverage
@@ -38,7 +38,7 @@ if (BOB_COVERAGE)
 
 		bob_info("generating gcov coverage report.")
 
-		find_program(GCOVR_APP gcovr)
+		find_program(GCOVR_EXE gcovr)
 
 		add_compile_options(
 			-O0												# Disable optimizations when generating test-coverage
@@ -76,9 +76,9 @@ function(bob_create_coverage_report)
 			COMMAND
 				${CMAKE_COMMAND} -E make_directory ${output_folder}
 			COMMAND
-				${LLVM_PROFDATA_APP} merge -sparse "${arg_NAME}.profraw" -o "${arg_NAME}.profdata"
+				${LLVM_PROFDATA_EXE} merge -sparse "${arg_NAME}.profraw" -o "${arg_NAME}.profdata"
 			COMMAND
-				${LLVM_COV_APP} show
+				${LLVM_COV_EXE} show
 					-ignore-filename-regex=".*[/\]tests[/\].*"
 					-show-mcdc
 					-show-line-counts-or-regions
@@ -87,7 +87,7 @@ function(bob_create_coverage_report)
 					$<TARGET_FILE:${arg_RUNNER}>
 					> "${output_folder}/index.html"
 			COMMAND
-				${LLVM_COV_APP} report
+				${LLVM_COV_EXE} report
 					-ignore-filename-regex=".*[/\]tests[/\].*"
 					-show-mcdc-summary
 					-instr-profile="${arg_NAME}.profdata"
@@ -106,9 +106,9 @@ function(bob_create_coverage_report)
 			COMMAND
 				${CMAKE_COMMAND} -E make_directory ${output_folder}
 			COMMAND
-				${GCOVR_APP} -r ${PROJECT_SOURCE_DIR} --html-details --output "${output_folder}/index.html"
+				${GCOVR_EXE} -r ${PROJECT_SOURCE_DIR} --html-details --output "${output_folder}/index.html"
 			COMMAND
-				${GCOVR_APP} -r ${PROJECT_SOURCE_DIR}
+				${GCOVR_EXE} -r ${PROJECT_SOURCE_DIR}
 			WORKING_DIRECTORY
 				${PROJECT_BINARY_DIR}
 			DEPENDS
