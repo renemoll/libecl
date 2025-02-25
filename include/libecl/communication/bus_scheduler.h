@@ -4,6 +4,9 @@
 #include "libecl/communication/transaction.h"
 #include "libecl/containers/fifo.hpp"
 
+#include <cstdint>
+#include <span>
+
 namespace ecl::communication {
 
 /*
