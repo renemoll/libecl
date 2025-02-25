@@ -12,13 +12,13 @@ option(BOB_CPPCHECK "Execute `cppcheck`" On)
 #
 
 function(bob_configure_cppcheck TARGET)
-	find_program(BOB_CPPCHECK_EXE NAMES cppcheck)
+	find_program(CPPCHECK_EXE NAMES cppcheck)
 
-	if (BOB_CPPCHECK AND NOT BOB_CPPCHECK_EXE)
+	if (BOB_CPPCHECK AND NOT CPPCHECK_EXE)
 		message(WARNING "[Bob] request for `cppcheck` failed as the executable could not be found.")
 	endif()
 
-	if (BOB_CPPCHECK_EXE AND BOB_CPPCHECK)
+	if (CPPCHECK_EXE AND BOB_CPPCHECK)
 		message(STATUS "[Bob] enabling `cppcheck` for `${TARGET}`")
 
 		set(options
