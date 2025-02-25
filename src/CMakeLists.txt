@@ -14,5 +14,6 @@ if(PROJECT_IS_TOP_LEVEL)
 	
 	bob_configure_clang_tidy(ecl)
 	bob_configure_cppcheck(ecl)
+	bob_configure_cpplint(ecl)
 	bob_configure_iwyu(ecl)
 endif()
