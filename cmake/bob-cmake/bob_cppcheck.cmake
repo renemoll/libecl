@@ -7,22 +7,22 @@ option(BOB_CPPCHECK "Execute `cppcheck`" On)
 #
 # Configure `cppcheck` for the given `TARGET`.
 #
-# Todo:
-#  - set the correct standard version.
-#
 
 function(bob_configure_cppcheck TARGET)
 	find_program(CPPCHECK_EXE NAMES cppcheck)
 
 	if (BOB_CPPCHECK AND NOT CPPCHECK_EXE)
-		message(WARNING "[Bob] request for `cppcheck` failed as the executable could not be found.")
+		bob_error("request for cppcheck failed as the executable could not be found")
 	endif()
 
-	if (CPPCHECK_EXE AND BOB_CPPCHECK)
-		message(STATUS "[Bob] enabling `cppcheck` for `${TARGET}`")
+	if (BOB_CPPCHECK AND CPPCHECK_EXE)
+		bob_info("enabling cppcheck for '${TARGET}'")
 
-		set(options
+		set(CPPCHECK_OPTIONS
 			"--enable=all"
+			"--force"
+			"--library=gnu"
+			"--language=c++"
 			"-i${PROJECT_SOURCE_DIR}/build"
 			"--inline-suppr"
 			"--suppress=unmatchedSuppression"
@@ -31,8 +31,8 @@ function(bob_configure_cppcheck TARGET)
 
 		set_target_properties(${TARGET}
 			PROPERTIES
-				C_CPPCHECK "cppcheck;--std=c11;{$options}"
-				CXX_CPPCHECK "cppcheck;--std=c++20;{$options}"
+				C_CPPCHECK "cppcheck;--std=c11;${CPPCHECK_OPTIONS}"
+				CXX_CPPCHECK "cppcheck;--std=c++20;${CPPCHECK_OPTIONS}"
 		)
 	else()
 		set_target_properties(${TARGET}

@@ -66,6 +66,7 @@ include(bob_coverage)
 include(bob_sanitizers)
 
 include(bob_clang_tidy)
+include(bob_cppcheck)
 include(bob_include_what_you_use)
 
 # include(bob_options)
