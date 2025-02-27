@@ -4,6 +4,10 @@
 
 option(BOB_CPPLINT "Execute `cpplint`" Off)
 
+#
+# Configure `cpplint` for the given `TARGET`.
+#
+
 function(bob_configure_cpplint TARGET)
 	find_program(CPPLINT_EXE cpplint)
 
