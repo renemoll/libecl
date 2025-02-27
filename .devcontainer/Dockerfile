@@ -56,6 +56,7 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		gdb \
 		# Code analysis
 		cppcheck \
+		flawfinder \
 		gcovr && \
 	pip install --break-system-packages cpplint pre-commit && \
 	# pre-commit install --hook-type commit-msg && \
