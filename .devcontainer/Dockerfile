@@ -54,6 +54,8 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		# GCC
 		g++-${GCC_VERSION} \
 		gdb \
+		# External libraries
+		libbenchmark-dev \
 		# Code analysis
 		cppcheck \
 		flawfinder \
