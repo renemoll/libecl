@@ -69,7 +69,7 @@ RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /us
 		cppcheck \
 		flawfinder \
 		gcovr && \
-	pip install --break-system-packages cpplint pre-commit && \
+	pip install --break-system-packages cpplint pre-commit reuse && \
 	# pre-commit install --hook-type commit-msg && \
 	apt-get autoremove -y && \
 	apt-get clean && \
