@@ -1,3 +1,0 @@
-[submodule "benchmark/queue_spsc/boost"]
-	path = benchmark/queue_spsc/boost
-	url = https://github.com/boostorg/boost.git
