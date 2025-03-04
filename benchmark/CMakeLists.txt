@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 
-option(BENCHMARK "Enable benchmarks" On)
+option(BENCHMARK "Enable benchmarks" Off)
 
 if (BENCHMARK)
     find_package(benchmark REQUIRED)

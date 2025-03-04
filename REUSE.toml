@@ -7,11 +7,12 @@ version = 1
 
 [[annotations]]
 path = [
-    ".vscode/*",
+    ".cppcheck_suppressions",
     ".devcontainer/*",
     ".gitattributes",
     ".gitignore",
     ".pre-commit-config.yaml",
+    ".vscode/*",
     "cmake/bob-cmake/*.md",
     "doc/*",
     "README.md",
