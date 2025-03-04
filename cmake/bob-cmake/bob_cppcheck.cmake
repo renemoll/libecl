@@ -34,7 +34,6 @@ function(bob_configure_cppcheck TARGET)
 			"--language=c++"
 			"-i${PROJECT_SOURCE_DIR}/build"
 			"--inline-suppr"
-			"--suppress=unmatchedSuppression"
 			"--suppressions-list=${PROJECT_SOURCE_DIR}/.cppcheck_suppressions"
 		)
 

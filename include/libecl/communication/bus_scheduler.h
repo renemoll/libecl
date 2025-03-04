@@ -52,10 +52,10 @@ public:
 	BusScheduler& operator=(BusScheduler&&) = delete;
 
 	bool blockingTransaction(const Transaction& transaction);
-	void scheduleTransaction(const Transaction& transaction);
+	// void scheduleTransaction(const Transaction& transaction);
 
-	void transferComplete();
-	void transferFailed();
+	// void transferComplete();
+	// void transferFailed();
 
 private:
 	// TODO: make size configurable...

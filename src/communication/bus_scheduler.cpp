@@ -40,18 +40,18 @@ bool BusScheduler::blockingTransaction(const Transaction& transaction)
 	return true;
 }
 
-void BusScheduler::scheduleTransaction(const Transaction& transaction)
-{
-	(void)transaction;
+// void BusScheduler::scheduleTransaction(const Transaction& transaction)
+// {
+// 	(void)transaction;
 
-	// queue current transaction
-	// if not busy
-	// - trigger the start of the next transaction
-	// if busy
-	// - no action
-}
+// 	// queue current transaction
+// 	// if not busy
+// 	// - trigger the start of the next transaction
+// 	// if busy
+// 	// - no action
+// }
 
-void BusScheduler::transferComplete() {}
-void BusScheduler::transferFailed() {}
+// void BusScheduler::transferComplete() {}
+// void BusScheduler::transferFailed() {}
 
 }  // namespace ecl::communication
