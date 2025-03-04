@@ -34,18 +34,7 @@ if (BOB_FLAWFINDER)
 			COMMENT
                 "flawfinder"
 			VERBATIM
-
         )
-		# set(CPPLINT_OPTIONS
-		# )
-		# set_property(
-		# 	TARGET
-		# 		${TARGET}
-		# 	PROPERTY
-		# 		CXX_CPPLINT
-		# 		"${CPPLINT_EXE};${CPPLINT_OPTIONS}"
-		# )
-
     else()
 		bob_error("request for flawfinder failed as the executable could not be found")
 	endif()
