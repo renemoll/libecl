@@ -1,12 +1,14 @@
 /*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
  * SPDX-FileCopyrightText: 2025 René Moll
- * SPDX-License-Identifier: MPL-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
 
-#define VERSION_MAJOR @PROJECT_VERSION_MAJOR @
-#define VERSION_MINOR @PROJECT_VERSION_MINOR @
-#define VERSION_PATCH @PROJECT_VERSION_PATCH @
+#include <string_view>
+
+namespace version {
+static constexpr std::string_view project_name = "@PROJECT_NAME@";
+static constexpr std::string_view project_version = "@PROJECT_VERSION@";
+static constexpr int major = @PROJECT_VERSION_MAJOR@;
+static constexpr int minor = @PROJECT_VERSION_MINOR@;
+static constexpr int path = @PROJECT_VERSION_PATCH@;
+}
