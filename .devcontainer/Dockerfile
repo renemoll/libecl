@@ -15,6 +15,10 @@ ARG GCC_VERSION=14
 ARG GCC_ARM_VERSION=13.3.rel1
 ARG INCLUDE_WHAT_YOU_USE_VERSION=0.22
 
+ARG USER_NAME=dev
+ARG USER_UID=1000
+ARG USER_GID=1000
+
 #
 # Required tools
 #
@@ -26,6 +30,7 @@ RUN apt-get update && \
 		gnupg2 \
 		python3-minimal \
 		python3-pip \
+		sudo \
 		wget \
 		xz-utils && \
 	apt-get autoremove -y && \
@@ -104,3 +109,10 @@ RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-${GCC_VERSION} 2
 	update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-${GCC_VERSION} 20 && \
 	update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${GCC_VERSION} 20 && \
 	update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+RUN groupadd --non-unique --gid $USER_GID $USER_NAME \
+    && useradd --non-unique --gid $USER_GID --uid $USER_UID --home /home/$USER_NAME $USER_NAME \
+    && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER_NAME \
+    && chmod 0440 /etc/sudoers.d/$USER_NAME
+
+USER $USER_UID
