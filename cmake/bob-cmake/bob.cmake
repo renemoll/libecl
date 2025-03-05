@@ -64,7 +64,7 @@ if (NOT BOB_USER_VERSION_HEADER)
 	set(BOB_USER_VERSION_HEADER "${CMAKE_CURRENT_LIST_DIR}/templates/version.h.in")
 endif()
 bob_info("generating version header from template: ${BOB_USER_VERSION_HEADER}")
-configure_file(${BOB_USER_VERSION_HEADER} version.h)
+configure_file(${BOB_USER_VERSION_HEADER} version.h ESCAPE_QUOTES)
 
 #
 # Project template

@@ -27,3 +27,8 @@ Checks: >
 
   readability-*,
   -readability-magic-numbers,
+
+
+WarningsAsErrors: '*'
+FormatStyle:      file
+UseColor:         true

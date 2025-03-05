@@ -15,6 +15,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/bob-cmake")
 project(libecl
 	LANGUAGES
 		CXX
+	VERSION
+		0.1.0
 )
 
 set(CMAKE_C_STANDARD 23)
