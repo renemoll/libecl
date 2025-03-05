@@ -11,7 +11,7 @@
 # Meet Bob: my collection of build tools
 #
 
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 function(bob_info)
 	message(STATUS "[BOB] Info: ${ARGN}")
@@ -20,6 +20,9 @@ endfunction()
 function(bob_error)
 	message(FATAL_ERROR "[BOB] Error: ${ARGN}")
 endfunction()
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/compiler")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
 
 #
 # Ensure an out of source build folder.
@@ -67,21 +70,18 @@ configure_file(${BOB_USER_VERSION_HEADER} version.h)
 # Project template
 #
 
-include(bob_compiler_id)
-include(bob_compiler_configuration)
-
-include(bob_compiler_warnings)
+include(bob_compiler)
 include(bob_coverage)
 include(bob_sanitizers)
+include(bob_tools)
 
-include(bob_clang_tidy)
-include(bob_cppcheck)
-include(bob_cpplint)
-include(bob_include_what_you_use)
-include(bob_flawfinder)
+function(bob_configure_project TARGET)
+	bob_configure_compiler_warnings(${TARGET})
+	bob_configure_sanitizers(${TARGET})
+    bob_configure_tools(${TARGET})
+endfunction()
 
 # include(bob_options)
-# include(bob_cppcheck)
 
 # add_library(bob_interface INTERFACE)
 # bob_configure_compiler_warnings(bob_interface)

@@ -17,14 +17,14 @@ add_executable(unittests
 
 target_link_libraries(unittests
 	PRIVATE
-		ecl
+		libecl
 		Catch2::Catch2WithMain
 )
 
 catch_discover_tests(unittests)
 bob_create_coverage_report(
 	NAME
-		ecl-coverage
+		libecl-coverage
 	RUNNER
 		unittests
 )
