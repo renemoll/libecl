@@ -2,26 +2,49 @@
 	"version": 6,
 	"configurePresets": [
 		{
-			"name": "default",
+			"name": "config-default",
+			"description": "Default configuration",
 			"hidden": true,
 			"binaryDir": "${sourceDir}/build/${presetName}",
 			"installDir": "${sourceDir}/install"
 		},
 		{
-			"name": "ninja",
+			"name": "clang",
+			"description": "Configure Clang as the C/C++ compiler",
 			"hidden": true,
-			"inherits": "default",
-			"generator": "Ninja"
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang",
+				"CMAKE_CXX_COMPILER": "clang++"
+			}
+		},
+		{
+			"name": "gcc",
+			"description": "Configure GCC as the C/C++ compiler",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "gcc",
+				"CMAKE_CXX_COMPILER": "c++"
+			}
 		},
 		{
 			"name": "debug",
+			"description": "Enable debug build",
 			"hidden": true,
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug"
 			}
 		},
 		{
+			"name": "release",
+			"description": "Enable release build",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
 			"name": "coverage",
+			"description": "Generate a coverage report",
 			"hidden": true,
 			"inherits": "debug",
 			"cacheVariables": {
@@ -29,39 +52,154 @@
 			}
 		},
 		{
+			"name": "ninja",
+			"description": "Use Ninja as generator",
+			"hidden": true,
+			"inherits": "config-default",
+			"generator": "Ninja"
+		},
+		{
 			"name": "ninja-debug",
-			"description": "Debug build with system compiler and Ninja",
+			"description": "Debug build using the default compiler and Ninja",
 			"inherits": [
-				"ninja",
-				"debug"
+				"debug",
+				"ninja"
 			]
 		},
 		{
-			"name": "ninja-coverage",
-			"description": "Debug build with system compiler and Ninja for coverage analysis",
+			"name": "ninja-gcc-debug",
+			"description": "Debug build using GCC and Ninja",
 			"inherits": [
-				"ninja",
-				"debug",
-				"coverage"
+				"gcc",
+				"ninja-debug"
+			]
+		},
+		{
+			"name": "ninja-clang-debug",
+			"description": "Debug build using Clang and Ninja",
+			"inherits": [
+				"clang",
+				"ninja-debug"
+			]
+		},
+		{
+			"name": "ninja-release",
+			"description": "Release build using the default compiler and Ninja",
+			"inherits": [
+				"release",
+				"ninja"
+			]
+		},
+		{
+			"name": "ninja-gcc-release",
+			"description": "Release build using GCC and Ninja",
+			"inherits": [
+				"gcc",
+				"ninja-release"
+			]
+		},
+		{
+			"name": "ninja-clang-release",
+			"description": "Release build using Clang and Ninja",
+			"inherits": [
+				"clang",
+				"ninja-release"
+			]
+		},
+		{
+			"name": "coverage-ninja",
+			"description": "Debug build using the default compiler, Ninja, and coverage analysis",
+			"inherits": [
+				"coverage",
+				"ninja"
+			]
+		},
+		{
+			"name": "coverage-ninja-gcc",
+			"description": "Debug build using the GCC compiler, Ninja, and coverage analysis",
+			"inherits": [
+				"gcc",
+				"coverage-ninja"
+			]
+		},
+		{
+			"name": "coverage-ninja-clang",
+			"description": "Debug build using the Clang compiler, Ninja, and coverage analysis",
+			"inherits": [
+				"clang",
+				"coverage-ninja"
 			]
 		}
 	],
 	"buildPresets": [
 		{
 			"name": "ninja-debug",
-			"configurePreset": "ninja-debug"
+			"description": "Debug build with the default compiler and Ninja",
+			"configurePreset": "ninja-debug",
+			"configuration": "Debug"
 		},
 		{
-			"name": "ninja-coverage",
-			"configurePreset": "ninja-coverage",
+			"name": "ninja-gcc-debug",
+			"description": "Debug build with GCC and Ninja",
+			"configurePreset": "ninja-gcc-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "ninja-clang-debug",
+			"description": "Debug build with Clang and Ninja",
+			"configurePreset": "ninja-clang-debug",
+			"configuration": "Debug"
+		},
+		{
+			"name": "ninja-release",
+			"description": "Release build with the default compiler and Ninja",
+			"configurePreset": "ninja-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "ninja-gcc-release",
+			"description": "Release build with GCC and Ninja",
+			"configurePreset": "ninja-gcc-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "ninja-clang-release",
+			"description": "Release build with Clang and Ninja",
+			"configurePreset": "ninja-clang-release",
+			"configuration": "Release"
+		},
+		{
+			"name": "coverage-ninja",
+			"description": "Debug build with the default compiler, Ninja, and coverage analysis",
+			"configurePreset": "coverage-ninja",
+			"configuration": "Debug",
 			"targets":[
-				"ecl-coverage"
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "coverage-ninja-gcc",
+			"description": "Debug build with the GCC compiler, Ninja, and coverage analysis",
+			"configurePreset": "coverage-ninja-gcc",
+			"configuration": "Debug",
+			"targets":[
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "coverage-ninja-clang",
+			"description": "Debug build with the Clang compiler, Ninja, and coverage analysis",
+			"configurePreset": "coverage-ninja-clang",
+			"configuration": "Debug",
+			"targets":[
+				"libecl-coverage"
 			]
 		}
 	],
 	"testPresets": [
 		{
-			"name": "default",
+			"name": "test-default",
+			"description": "Default test configuration",
 			"hidden": true,
 			"output": {
 				"outputOnFailure": true
@@ -72,32 +210,156 @@
 			}
 		},
 		{
-			"name": "coverage",
-			"inherits": "default",
-			"configurePreset": "ninja-coverage"
+			"name": "unittest",
+			"inherits": "test-default",
+			"configurePreset": "ninja-debug"
 		},
 		{
-			"name": "unittest",
-			"inherits": "default",
-			"configurePreset": "ninja-debug"
+			"name": "unittest-ninja-gcc-debug",
+			"inherits": "test-default",
+			"configurePreset": "ninja-gcc-debug"
+		},
+		{
+			"name": "unittest-ninja-clang-debug",
+			"inherits": "test-default",
+			"configurePreset": "ninja-clang-debug"
+		},
+		{
+			"name": "unittest-release",
+			"inherits": "test-default",
+			"configurePreset": "ninja-release"
+		},
+		{
+			"name": "unittest-ninja-gcc-release",
+			"inherits": "test-default",
+			"configurePreset": "ninja-gcc-release"
+		},
+		{
+			"name": "unittest-ninja-clang-release",
+			"inherits": "test-default",
+			"configurePreset": "ninja-clang-release"
 		}
 	],
 	"workflowPresets": [
+		{
+			"name": "build-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-debug"
+				}
+			]
+		},
+		{
+			"name": "build-ninja-gcc-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-gcc-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-gcc-debug"
+				}
+			]
+		},
+		{
+			"name": "build-ninja-clang-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-clang-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-clang-debug"
+				}
+			]
+		},
+		{
+			"name": "build-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-release"
+				}
+			]
+		},
+		{
+			"name": "build-ninja-gcc-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-gcc-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-gcc-release"
+				}
+			]
+		},
+		{
+			"name": "build-ninja-clang-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-clang-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-clang-release"
+				}
+			]
+		},
 		{
 			"name": "coverage",
 			"steps": [
 				{
 					"type": "configure",
-					"name": "ninja-coverage"
+					"name": "coverage-ninja"
 				},
 				{
 					"type": "build",
-					"name": "ninja-coverage"
+					"name": "coverage-ninja"
 				}
 			]
 		},
 		{
-			"name": "unittest",
+			"name": "coverage-gcc",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-gcc"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-gcc"
+				}
+			]
+		},
+		{
+			"name": "coverage-clang",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-clang"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-clang"
+				}
+			]
+		},
+		{
+			"name": "unittest-debug",
 			"steps": [
 				{
 					"type": "configure",
@@ -110,6 +372,91 @@
 				{
 					"type": "test",
 					"name": "unittest"
+				}
+			]
+		},
+		{
+			"name": "unittest-ninja-gcc-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-gcc-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-gcc-debug"
+				},
+				{
+					"type": "test",
+					"name": "unittest-ninja-gcc-debug"
+				}
+			]
+		},
+		{
+			"name": "unittest-ninja-clang-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-clang-debug"
+				},
+				{
+					"type": "build",
+					"name": "ninja-clang-debug"
+				},
+				{
+					"type": "test",
+					"name": "unittest-ninja-clang-debug"
+				}
+			]
+		},
+				{
+			"name": "unittest-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-release"
+				},
+				{
+					"type": "test",
+					"name": "unittest-release"
+				}
+			]
+		},
+		{
+			"name": "unittest-ninja-gcc-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-gcc-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-gcc-release"
+				},
+				{
+					"type": "test",
+					"name": "unittest-ninja-gcc-release"
+				}
+			]
+		},
+		{
+			"name": "unittest-ninja-clang-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "ninja-clang-release"
+				},
+				{
+					"type": "build",
+					"name": "ninja-clang-release"
+				},
+				{
+					"type": "test",
+					"name": "unittest-ninja-clang-release"
 				}
 			]
 		}
