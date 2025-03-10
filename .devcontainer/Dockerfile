@@ -19,6 +19,10 @@ ARG USER_NAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
 
+LABEL org.opencontainers.image.title "Build environment for libecl"
+LABEL org.opencontainers.image.authors "René Moll"
+LABEL org.opencontainers.image.licenses "MPL-2.0"
+
 #
 # Required tools
 #
