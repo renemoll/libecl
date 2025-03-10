@@ -1,0 +1,48 @@
+#
+# SPDX-FileCopyrightText: 2025 René Moll
+# SPDX-License-Identifier: CC0-1.0
+#
+
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build-linux-gcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc: [10, 11, 12, 13, 14]
+        cxx: [20, 23]
+
+    runs-on: ubuntu-latest
+    env:
+      CC: gcc-${{ matrix.gcc }}
+      CXX: g++-${{ matrix.gcc }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: bootstrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install clang-tidy cmake ninja-build g++-${{ matrix.gcc }} cppcheck flawfinder catch2 iwyu
+
+      - name: Debug build & test
+        # Not using the preset, as I want to configure the CXX standard from here
+        # run: cmake --workflow --preset unittest-debug
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -G Ninja -B build/debug -S .
+          cmake --build build/debug
+          build/debug/test/unittest
+
+      - name: Release build & test
+        # run: cmake --workflow --preset unittest-release
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -G Ninja -B build/release -S .
+          cmake --build build/release
+          build/release/test/unittest
