@@ -15,6 +15,10 @@ target_include_directories(libecl
 	PUBLIC
 		"${PROJECT_SOURCE_DIR}/include"
 )
+target_compile_features(libecl
+	PUBLIC
+		cxx_std_20
+)
 
 if(PROJECT_IS_TOP_LEVEL)
 	bob_configure_target(libecl)
