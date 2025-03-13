@@ -19,12 +19,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build debug
-        uses: docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+        uses: docker://ghcr.io/renemoll/libecl:development
         with:
           args: cmake --workflow --preset unittest-debug
 
       - name: Build release
-        uses: docker://ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+        uses: docker://ghcr.io/renemoll/libecl:development
         with:
           args: cmake --workflow --preset unittest-release
 
