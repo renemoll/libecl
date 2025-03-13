@@ -14,6 +14,10 @@ target_include_directories(ecl
 	INTERFACE
 		"${PROJECT_SOURCE_DIR}/include"
 )
+target_compile_features(libecl
+	PUBLIC
+		cxx_std_20
+)
 
 if(PROJECT_IS_TOP_LEVEL)
 	bob_configure_project(libecl)
