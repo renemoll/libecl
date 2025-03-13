@@ -30,5 +30,5 @@ cmake --workflow --list-presets
 
 Workflow | Command
 --- | ---
-Unit tests | ```cmake --workflow --preset unittest```
+Unit tests | ```cmake --workflow --preset unittest-debug```
 Test coverage | ```cmake --workflow --preset coverage```
