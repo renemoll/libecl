@@ -44,7 +44,7 @@ protected:
 class BusScheduler
 {
 public:
-	BusScheduler(BusDriverInterface& bus);
+	explicit BusScheduler(BusDriverInterface& bus);
 	~BusScheduler() = default;
 	BusScheduler(const BusScheduler&) = delete;
 	BusScheduler& operator=(const BusScheduler&) = delete;

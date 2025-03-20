@@ -244,39 +244,39 @@ SCENARIO("BusScheduler: blocking transaction")
 	}
 }
 
-SCENARIO("BusScheduler: schedule read")
-{
-	SKIP();
-}
+// SCENARIO("BusScheduler: schedule read")
+// {
+// 	SKIP();
+// }
 
-SCENARIO("BusScheduler: schedule write")
-{
-	SKIP();
-}
+// SCENARIO("BusScheduler: schedule write")
+// {
+// 	SKIP();
+// }
 
-SCENARIO("BusScheduler: schedule transactions")
-{
-	SKIP();
+// SCENARIO("BusScheduler: schedule transactions")
+// {
+// 	SKIP();
 
-	WHEN("an initialized BusScheduler")
-	{
-		FakeBusDriver bus{};
-		BusScheduler dut{bus};
+// 	WHEN("an initialized BusScheduler")
+// 	{
+// 		FakeBusDriver bus{};
+// 		BusScheduler dut{bus};
 
-		// TODO: given no active transaction
-		//       - a new transactions is queued and the low-level driver is
-		//         started.
-		//       - function returns inmediatly
-		//       - once the low-level driver finishes -> the next
-		//       transaction is
-		//         started
-		//                                            -> a callback is
-		//                                            invoked
+// 		// TODO: given no active transaction
+// 		//       - a new transactions is queued and the low-level driver is
+// 		//         started.
+// 		//       - function returns immediately
+// 		//       - once the low-level driver finishes -> the next
+// 		//       transaction is
+// 		//         started
+// 		//                                            -> a callback is
+// 		//                                            invoked
 
-		// TODO: given an active transaction
-		//       - new transaction is queued
-		//       - new transaction starts when all previous transactions
-		//         completed (or timed out)
-		//       - callback is invoked when done
-	}
-}
+// 		// TODO: given an active transaction
+// 		//       - new transaction is queued
+// 		//       - new transaction starts when all previous transactions
+// 		//         completed (or timed out)
+// 		//       - callback is invoked when done
+// 	}
+// }
