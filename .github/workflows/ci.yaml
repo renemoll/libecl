@@ -13,20 +13,21 @@ on:
 jobs:
   build-devcontainer:
     runs-on: ubuntu-latest
+    container:
+      image: 'ghcr.io/${{ github.repository }}:development'
+      credentials:
+         username: ${{ github.actor }}
+         password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
       - name: Build debug
-        uses: docker://ghcr.io/renemoll/libecl:development
-        with:
-          args: cmake --workflow --preset unittest-debug
+        run: cmake --workflow --preset unittest-debug
 
       - name: Build release
-        uses: docker://ghcr.io/renemoll/libecl:development
-        with:
-          args: cmake --workflow --preset unittest-release
+        run: cmake --workflow --preset unittest-release
 
   build-linux-gcc:
     strategy:
