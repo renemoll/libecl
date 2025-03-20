@@ -9,12 +9,12 @@ clang-coverage:
 
 .PHONY: clang-unittest
 clang-unittest:
-	CC=clang CXX=clang++ cmake --workflow --preset unittest
+	CC=clang CXX=clang++ cmake --workflow --preset unittest-debug
 
-.PHONY: gcc-coverage
+.PHONY: coverage
 gcc-coverage:
 	cmake --workflow --preset coverage
 
-.PHONY: gcc-unittest
+.PHONY: unittest
 gcc-unittest:
-	cmake --workflow --preset unittest
+	cmake --workflow --preset unittest-debug
