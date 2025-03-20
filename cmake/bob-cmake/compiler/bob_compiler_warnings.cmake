@@ -7,6 +7,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 
+include(CheckCompilerFlag)
+
 #
 # Compiler configuration
 #
@@ -14,6 +16,24 @@
 if (BOB_COMPILER_CLANG)
 	option(BOB_CLANG_WARN_EVERYTHING "Enable `-Weverything` for Clang" Off)
 endif()
+
+
+function(filter_compiler_flags LANG FLAGS OUTPUT)
+	get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+	set(RESULT "")
+
+	if (${LANG} IN_LIST  enabled_languages)
+		foreach(flag IN LISTS FLAGS)
+			string(REPLACE - _ flag_available ${flag})
+			check_compiler_flag(${LANG} ${flag} ${flag_available})
+			if (${flag_available})
+				list(APPEND RESULT ${flag})
+			endif()
+		endforeach()
+	endif()
+
+	set(${OUTPUT} "${RESULT}" PARENT_SCOPE)
+endfunction()
 
 #
 # bob_configure_compiler_warnings
@@ -119,13 +139,20 @@ function(bob_configure_compiler_warnings TARGET)
 		bob_error("unsupported compiler.")
 	endif()
 
+	# Merge the lists into 2: one for C and one for C++
+	list(APPEND C_WARNINGS "${WARNINGS}")
+	list(APPEND CXX_WARNINGS "${WARNINGS}")
+	
+	set(C_WARNINGS_FILTERED "")
+	set(CXX_WARNINGS_FILTERED "")
+	filter_compiler_flags(C "${C_WARNINGS}" C_WARNINGS_FILTERED)
+	filter_compiler_flags(CXX "${CXX_WARNINGS}" CXX_WARNINGS_FILTERED)
+
 	target_compile_options(${TARGET}
 		INTERFACE
-			${WARNINGS}
-			$<$<COMPILE_LANGUAGE:C>:${C_WARNINGS}>
-			$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNINGS}>
+			$<$<COMPILE_LANGUAGE:C>:${C_WARNINGS_FILTERED}>
+			$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNINGS_FILTERED}>
 	)
-
 
 # 	set(BOB_COMPILER_WARNINGS_MSVC
 # 		/permissive-										# Conform to the C++ standard.
