@@ -10,7 +10,7 @@
 #include "libecl/communication/bus_scheduler.h"
 
 namespace ecl::communication {
-BusScheduler::BusScheduler(BusDriverInterface& bus)
+BusScheduler::BusScheduler(IBusDriver& bus)
 	: m_queue{}
 	, m_bus{&bus}
 {

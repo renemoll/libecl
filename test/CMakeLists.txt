@@ -14,6 +14,7 @@ add_executable(unittests)
 
 target_sources(unittests
 	PRIVATE
+		fakes/fake_bus_driver.cpp
 		test_aligned_storage.cpp
 		test_bus_scheduler.cpp
 		test_queue_spsc.cpp

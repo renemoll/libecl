@@ -9,9 +9,10 @@
 
 #include "libecl/communication/bus_scheduler.h"
 
-#include <type_traits>
+#include "fakes/fake_bus_driver.h"
 
-#include "catch2/catch_test_macros.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <type_traits>
 
 using namespace ecl::communication;
 
@@ -29,67 +30,6 @@ static_assert(!std::is_nothrow_move_constructible_v<BusScheduler>);
 
 static_assert(!std::is_move_assignable_v<BusScheduler>);
 static_assert(!std::is_nothrow_move_assignable_v<BusScheduler>);
-
-class FakeBusDriver : public BusDriverInterface
-{
-public:
-	bool read(std::span<uint8_t> rx) override
-	{
-		m_rxCount++;
-
-		const auto view = m_rxView.subspan(0, std::min(rx.size(), m_rxView.size()));
-		std::copy(std::begin(view), std::end(view), std::begin(rx));
-
-		return m_returnValue;
-	}
-
-	bool write(std::span<const uint8_t> tx) override
-	{
-		m_txCount++;
-
-		assert(tx.size() <= m_txBuffer.size());
-
-		std::copy(std::begin(tx), std::end(tx), std::begin(m_txBuffer));
-		m_txView = std::span<uint8_t>(m_txBuffer.data(), tx.size());
-
-		return m_returnValue;
-	}
-
-	bool readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx) override
-	{
-		m_rxCount++;
-		m_txCount++;
-
-		assert(tx.size() <= m_txBuffer.size());
-
-		std::copy(std::begin(tx), std::end(tx), std::begin(m_txBuffer));
-		m_txView = std::span<uint8_t>(m_txBuffer.data(), tx.size());
-
-		const auto view = m_rxView.subspan(0, std::min(rx.size(), m_rxView.size()));
-		std::copy(std::begin(view), std::end(view), std::begin(rx));
-
-		return m_returnValue;
-	}
-
-	void setRxData(std::span<const uint8_t> rx)
-	{
-		assert(rx.size() <= m_rxBuffer.size());
-
-		std::copy(std::begin(rx), std::end(rx), std::begin(m_rxBuffer));
-		m_rxView = std::span<uint8_t>(m_rxBuffer.data(), rx.size());
-	}
-
-	std::array<uint8_t, 256> m_txBuffer = {};
-	std::span<uint8_t> m_txView = {};
-
-	std::array<uint8_t, 256> m_rxBuffer = {};
-	std::span<uint8_t> m_rxView = {};
-
-	std::size_t m_txCount = 0;
-	std::size_t m_rxCount = 0;
-
-	bool m_returnValue = true;
-};
 
 SCENARIO("BusScheduler: initialization")
 {
