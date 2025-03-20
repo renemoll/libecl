@@ -30,21 +30,20 @@ namespace ecl::communication {
  *   set correct callback
  *   then call HAL_SPI_TransmitReceive_DMA
  */
-class BusDriverInterface
+class IBusDriver
 {
 public:
+	virtual ~IBusDriver() = default;
+
 	virtual bool read(std::span<uint8_t> rx) = 0;
 	virtual bool write(std::span<const uint8_t> tx) = 0;
 	virtual bool readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx) = 0;
-
-protected:
-	virtual ~BusDriverInterface() = default;
 };
 
 class BusScheduler
 {
 public:
-	explicit BusScheduler(BusDriverInterface& bus);
+	explicit BusScheduler(IBusDriver& bus);
 	~BusScheduler() = default;
 	BusScheduler(const BusScheduler&) = delete;
 	BusScheduler& operator=(const BusScheduler&) = delete;
@@ -61,7 +60,7 @@ private:
 	// TODO: make size configurable...
 	// TODO: mpsc fifo
 	ecl::containers::Fifo<Transaction, 4> m_queue;
-	BusDriverInterface* m_bus;
+	IBusDriver* m_bus;
 };
 }  // namespace ecl::communication
 

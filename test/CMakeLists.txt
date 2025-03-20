@@ -11,6 +11,7 @@ find_package(Catch2 3 REQUIRED)
 include(Catch)
 
 add_executable(unittests
+	fakes/fake_bus_driver.cpp
 	test_bus_scheduler.cpp
 	test_fifo.cpp
 )
