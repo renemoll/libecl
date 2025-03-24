@@ -14,17 +14,18 @@
 option(BOB_CPPCHECK "Execute `cppcheck`" On)
 
 #
+# bob_configure_cppcheck
+#
 # Configure `cppcheck` for the given `TARGET`.
 #
-
 function(bob_configure_cppcheck TARGET)
 	find_program(CPPCHECK_EXE NAMES cppcheck)
 
-	if (BOB_CPPCHECK AND NOT CPPCHECK_EXE)
-		bob_error("request for cppcheck failed as the executable could not be found")
-	endif()
+	if (BOB_CPPCHECK)
+		if (NOT CPPCHECK_EXE)
+			bob_error("request for cppcheck failed as the executable could not be found")
+		endif()
 
-	if (BOB_CPPCHECK AND CPPCHECK_EXE)
 		bob_info("enabling cppcheck for '${TARGET}'")
 
 		set(CPPCHECK_OPTIONS
@@ -39,14 +40,8 @@ function(bob_configure_cppcheck TARGET)
 
 		set_target_properties(${TARGET}
 			PROPERTIES
-				C_CPPCHECK "cppcheck;--std=c11;${CPPCHECK_OPTIONS}"
-				CXX_CPPCHECK "cppcheck;--std=c++20;${CPPCHECK_OPTIONS}"
-		)
-	else()
-		set_target_properties(${TARGET}
-			PROPERTIES
-				C_CPPCHECK ""
-				CXX_CPPCHECK ""
+				C_CPPCHECK "${CPPCHECK_EXE};--std=c11;${CPPCHECK_OPTIONS}"
+				CXX_CPPCHECK "${CPPCHECK_EXE};--std=c++20;${CPPCHECK_OPTIONS}"
 		)
 	endif()
 endfunction()
