@@ -10,13 +10,16 @@
 find_package(Catch2 3 REQUIRED)
 include(Catch)
 
-add_executable(unittests
-	test_fifo.cpp
+add_executable(unittests)
+
+target_sources(unittests
+	PRIVATE
+		test_fifo.cpp
 )
 
 target_link_libraries(unittests
 	PRIVATE
-		libecl
+		libecl::libecl
 		Catch2::Catch2WithMain
 )
 

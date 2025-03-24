@@ -142,14 +142,14 @@ function(bob_configure_compiler_warnings TARGET)
 	# Merge the lists into 2: one for C and one for C++
 	list(APPEND C_WARNINGS "${WARNINGS}")
 	list(APPEND CXX_WARNINGS "${WARNINGS}")
-	
+
 	set(C_WARNINGS_FILTERED "")
 	set(CXX_WARNINGS_FILTERED "")
 	filter_compiler_flags(C "${C_WARNINGS}" C_WARNINGS_FILTERED)
 	filter_compiler_flags(CXX "${CXX_WARNINGS}" CXX_WARNINGS_FILTERED)
 
 	target_compile_options(${TARGET}
-		INTERFACE
+		PRIVATE
 			$<$<COMPILE_LANGUAGE:C>:${C_WARNINGS_FILTERED}>
 			$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNINGS_FILTERED}>
 	)
