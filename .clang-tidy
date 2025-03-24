@@ -32,3 +32,6 @@ Checks: >
 WarningsAsErrors: '*'
 FormatStyle:      file
 UseColor:         true
+ExtraArgs:
+  - -Wno-unknown-warning-option
+  - -Wno-error=unused-command-line-argument
