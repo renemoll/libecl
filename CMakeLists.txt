@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.23)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/bob-cmake")
@@ -23,7 +23,7 @@ if(PROJECT_IS_TOP_LEVEL)
 	include(bob)
 endif()
 
-add_subdirectory(src)
+add_subdirectory(libecl)
 
 if(PROJECT_IS_TOP_LEVEL)
 	add_subdirectory(benchmark)

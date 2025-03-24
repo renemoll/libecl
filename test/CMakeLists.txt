@@ -10,15 +10,18 @@
 find_package(Catch2 3 REQUIRED)
 include(Catch)
 
-add_executable(unittests
-	fakes/fake_bus_driver.cpp
-	test_bus_scheduler.cpp
-	test_fifo.cpp
+add_executable(unittests)
+
+target_sources(unittests
+	PRIVATE
+		fakes/fake_bus_driver.cpp
+		test_bus_scheduler.cpp
+		test_fifo.cpp
 )
 
 target_link_libraries(unittests
 	PRIVATE
-		libecl
+		libecl::libecl
 		Catch2::Catch2WithMain
 )
 
