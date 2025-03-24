@@ -13,29 +13,34 @@
 
 option(BOB_FLAWFINDER "Execute `flawfinder`" Off)
 
-if (BOB_FLAWFINDER)
+#
+# bob_configure_flawfinder
+#
+# Configure flawfilder for a specific path
+#
+function(bob_configure_flawfinder PATH)
 	find_program(FLAWFINDER_EXE flawfinder)
 
-	if (FLAWFINDER_EXE)
+    if (BOB_FLAWFINDER)
+		if (NOT FLAWFINDER_EXE)
+			bob_error("request for flawfinder failed as the executable could not be found")
+		endif()
+
 		bob_info("enabling flawfinder")
 
-        set(OPTIONS
-            "${PROJECT_SOURCE_DIR}/include"
-            "${PROJECT_SOURCE_DIR}/src"
-            "${PROJECT_SOURCE_DIR}/test"
+        set(FLAWFINDER_OPTIONS
+            "${PATH}"
         )
 
         add_custom_target(flawfinder
             ALL
             COMMAND
-                ${CMAKE_COMMAND} -E ${FLAWFINDER_EXE} ${OPTIONS}
+                ${CMAKE_COMMAND} -E ${FLAWFINDER_EXE} ${FLAWFINDER_OPTIONS}
             WORKING_DIRECTORY
                  ${CMAKE_CURRENT_SOURCE_DIR}
 			COMMENT
                 "flawfinder"
 			VERBATIM
         )
-    else()
-		bob_error("request for flawfinder failed as the executable could not be found")
 	endif()
-endif()
+endfunction()
