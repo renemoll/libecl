@@ -8,13 +8,13 @@
 #
 
 #
-# Cortex-M7 specific compiler configuration
-# With double precision FPU
+# Cortex-M4 specific compiler configuration
+# With single precision FPU
 #
 
 set(ARM_API
-	-mcpu=cortex-m7					# ARM Cortex-M7 CPU.
-	-mfpu=fpv5-d16					# FPU use FPv5 instructions.
+	-mcpu=cortex-m4					# ARM Cortex-M4 CPU.
+	-mfpu=fpv4-sp-d16				# FPU use FPv4 instructions.
 	-mfloat-abi=hard				# Use FPU ABI.
 	-mthumb							# Generate Thumb instructions.
 	-mabi=aapcs						# Use 'ARM Architecture Procedure Calling Standard' ABI.
