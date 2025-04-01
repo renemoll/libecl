@@ -106,4 +106,4 @@ endif()
 # Helpers
 #
 
-# include(bob_firmware_image)
+include(bob_firmware_image)
