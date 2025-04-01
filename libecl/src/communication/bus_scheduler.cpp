@@ -9,6 +9,8 @@
 
 #include "libecl/communication/bus_scheduler.h"
 
+#include "libecl/communication/ibus_driver.h"
+
 namespace ecl::communication {
 BusScheduler::BusScheduler(IBusDriver& bus)
 	: m_queue{}
