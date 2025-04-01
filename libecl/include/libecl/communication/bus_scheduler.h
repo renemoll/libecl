@@ -13,32 +13,8 @@
 #include "libecl/communication/transaction.h"
 #include "libecl/containers/fifo.hpp"
 
-#include <cstdint>
-#include <span>
-
 namespace ecl::communication {
-
-/*
- * For STM32:
- * define USE_HAL_SPI_REGISTER_CALLBACKS
- * - HAL_SPI_RegisterCallback(HAL_SPI_TX_COMPLETE_CB_ID, ...)
- * - HAL_SPI_RegisterCallback(HAL_SPI_RX_COMPLETE_CB_ID, ...)
- * - HAL_SPI_RegisterCallback(HAL_SPI_TX_RX_COMPLETE_CB_ID, ...)
- *
- * - read/write/writeAndRead
- *   spin until __HAL_SPI_GET_FLAG(SPI_FLAG_BSY) is false
- *   set correct callback
- *   then call HAL_SPI_TransmitReceive_DMA
- */
-class IBusDriver
-{
-public:
-	virtual ~IBusDriver() = default;
-
-	virtual bool read(std::span<uint8_t> rx) = 0;
-	virtual bool write(std::span<const uint8_t> tx) = 0;
-	virtual bool readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx) = 0;
-};
+class IBusDriver;
 
 class BusScheduler
 {
