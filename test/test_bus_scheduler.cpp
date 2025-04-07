@@ -59,7 +59,7 @@ SCENARIO("BusScheduler: blocking read")
 			bus.setRxData(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
-			const auto transaction = Transaction{Transaction::Type::Read, {}, rxData};
+			const auto transaction = Transaction{0xAB, Transaction::Type::Read, {}, rxData};
 			REQUIRE(dut.blockingTransaction(transaction));
 
 			THEN("RX data is filled with response data")
@@ -81,7 +81,7 @@ SCENARIO("BusScheduler: blocking read")
 			bus.setRxData(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
-			const auto transaction = Transaction{Transaction::Type::Read, {}, rxData};
+			const auto transaction = Transaction{0xA5, Transaction::Type::Read, {}, rxData};
 			const auto result = dut.blockingTransaction(transaction);
 
 			THEN("the transaction fails")
@@ -102,7 +102,7 @@ SCENARIO("BusScheduler: blocking write")
 		WHEN("a blocking write is executed successfully")
 		{
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
-			const auto transaction = Transaction{Transaction::Type::Write, txData, {}};
+			const auto transaction = Transaction{0x5A, Transaction::Type::Write, txData, {}};
 			REQUIRE(dut.blockingTransaction(transaction));
 
 			THEN("TX data is send to the BusDriver")
@@ -121,7 +121,7 @@ SCENARIO("BusScheduler: blocking write")
 			bus.m_returnValue = false;
 
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
-			const auto transaction = Transaction{Transaction::Type::Write, txData, {}};
+			const auto transaction = Transaction{0xAA, Transaction::Type::Write, txData, {}};
 			const auto result = dut.blockingTransaction(transaction);
 
 			THEN("the transaction fails")
@@ -146,7 +146,7 @@ SCENARIO("BusScheduler: blocking transaction")
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
-			const auto transaction = Transaction{Transaction::Type::ReadWrite, txData, rxData};
+			const auto transaction = Transaction{0xEF, Transaction::Type::WriteRead, txData, rxData};
 			REQUIRE(dut.blockingTransaction(transaction));
 
 			THEN("RX data is filled with response data")
@@ -173,7 +173,7 @@ SCENARIO("BusScheduler: blocking transaction")
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
-			const auto transaction = Transaction{Transaction::Type::ReadWrite, txData, rxData};
+			const auto transaction = Transaction{0x0D, Transaction::Type::WriteRead, txData, rxData};
 			const auto result = dut.blockingTransaction(transaction);
 
 			THEN("the transaction fails")

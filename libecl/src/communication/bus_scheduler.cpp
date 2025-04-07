@@ -27,15 +27,15 @@ bool BusScheduler::blockingTransaction(const Transaction& transaction)
 {
 	switch (transaction.m_type) {
 		case Transaction::Type::Read: {
-			return m_bus->read(transaction.m_rx);
+			return m_bus->read(transaction.m_deviceAddress, transaction.m_rx);
 		} break;
 
 		case Transaction::Type::Write: {
-			return m_bus->write(transaction.m_tx);
+			return m_bus->write(transaction.m_deviceAddress, transaction.m_tx);
 		} break;
 
-		case Transaction::Type::ReadWrite: {
-			return m_bus->readAndWrite(transaction.m_tx, transaction.m_rx);
+		case Transaction::Type::WriteRead: {
+			return m_bus->writeAndRead(transaction.m_deviceAddress, transaction.m_tx, transaction.m_rx);
 		} break;
 	}
 

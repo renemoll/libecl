@@ -7,34 +7,22 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
- #ifndef ECL_COMMUNICATION_IBUS_DRIVER_H
- #define ECL_COMMUNICATION_IBUS_DRIVER_H
- 
+#ifndef ECL_COMMUNICATION_IBUS_DRIVER_H
+#define ECL_COMMUNICATION_IBUS_DRIVER_H
+
 #include <cstdint>
 #include <span>
 
-/*
- * For STM32:
- * define USE_HAL_SPI_REGISTER_CALLBACKS
- * - HAL_SPI_RegisterCallback(HAL_SPI_TX_COMPLETE_CB_ID, ...)
- * - HAL_SPI_RegisterCallback(HAL_SPI_RX_COMPLETE_CB_ID, ...)
- * - HAL_SPI_RegisterCallback(HAL_SPI_TX_RX_COMPLETE_CB_ID, ...)
- *
- * - read/write/writeAndRead
- *   spin until __HAL_SPI_GET_FLAG(SPI_FLAG_BSY) is false
- *   set correct callback
- *   then call HAL_SPI_TransmitReceive_DMA
- */
 namespace ecl::communication {
 class IBusDriver
 {
 public:
 	virtual ~IBusDriver() = default;
 
-	virtual bool read(std::span<uint8_t> rx) = 0;
-	virtual bool write(std::span<const uint8_t> tx) = 0;
-	virtual bool readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx) = 0;
+	virtual bool read(uint8_t device_address, std::span<uint8_t> rx) = 0;
+	virtual bool write(uint8_t device_address, std::span<const uint8_t> tx) = 0;
+	virtual bool writeAndRead(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx) = 0;
 };
-}
+}  // namespace ecl::communication
 
 #endif
