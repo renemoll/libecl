@@ -9,7 +9,9 @@
 
 #include "fake_bus_driver.h"
 
-bool FakeBusDriver::read(std::span<uint8_t> rx)
+#include <cassert>
+
+bool FakeBusDriver::read(uint8_t device_address, std::span<uint8_t> rx)
 {
 	m_rxCount++;
 
@@ -19,7 +21,7 @@ bool FakeBusDriver::read(std::span<uint8_t> rx)
 	return m_returnValue;
 }
 
-bool FakeBusDriver::write(std::span<const uint8_t> tx)
+bool FakeBusDriver::write(uint8_t device_address, std::span<const uint8_t> tx)
 {
 	m_txCount++;
 
@@ -31,7 +33,7 @@ bool FakeBusDriver::write(std::span<const uint8_t> tx)
 	return m_returnValue;
 }
 
-bool FakeBusDriver::readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx)
+bool FakeBusDriver::writeAndRead(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx)
 {
 	m_rxCount++;
 	m_txCount++;

@@ -10,14 +10,14 @@
 #ifndef ECL_TEST_FAKE_BUS_DRIVER_H
 #define ECL_TEST_FAKE_BUS_DRIVER_H
 
-#include "libecl/communication/bus_scheduler.h"
+#include "libecl/communication/ibus_driver.h"
 
 class FakeBusDriver : public ecl::communication::IBusDriver
 {
 public:
-	bool read(std::span<uint8_t> rx) override;
-	bool write(std::span<const uint8_t> tx) override;
-	bool readAndWrite(std::span<const uint8_t> tx, std::span<uint8_t> rx) override;
+	bool read(uint8_t device_address, std::span<uint8_t> rx) override;
+	bool write(uint8_t device_address, std::span<const uint8_t> tx) override;
+	bool writeAndRead(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx) override;
 
 	void setRxData(std::span<const uint8_t> rx);
 

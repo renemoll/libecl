@@ -14,15 +14,19 @@
 #include <span>
 
 namespace ecl::communication {
+	/**
+	 * todo: internal interface
+	 */
 struct Transaction
 {
 	enum class Type
 	{
 		Read,
-		ReadWrite,
 		Write,
+		WriteRead,
 	};
 
+	uint8_t m_deviceAddress;
 	Type m_type;
 	std::span<const uint8_t> m_tx;
 	std::span<uint8_t> m_rx;
