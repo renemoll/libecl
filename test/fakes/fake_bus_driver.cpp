@@ -13,46 +13,46 @@
 
 bool FakeBusDriver::read(uint8_t device_address, std::span<uint8_t> rx)
 {
-	m_rxCount++;
+	m_rx_count++;
 
-	const auto view = m_rxView.subspan(0, std::min(rx.size(), m_rxView.size()));
+	const auto view = m_rx_view.subspan(0, std::min(rx.size(), m_rx_view.size()));
 	std::copy(std::begin(view), std::end(view), std::begin(rx));
 
-	return m_returnValue;
+	return m_return_value;
 }
 
 bool FakeBusDriver::write(uint8_t device_address, std::span<const uint8_t> tx)
 {
-	m_txCount++;
+	m_tx_count++;
 
-	assert(tx.size() <= m_txBuffer.size());
+	assert(tx.size() <= m_tx_buffer.size());
 
-	std::copy(std::begin(tx), std::end(tx), std::begin(m_txBuffer));
-	m_txView = std::span<uint8_t>(m_txBuffer.data(), tx.size());
+	std::copy(std::begin(tx), std::end(tx), std::begin(m_tx_buffer));
+	m_tx_view = std::span<uint8_t>(m_tx_buffer.data(), tx.size());
 
-	return m_returnValue;
+	return m_return_value;
 }
 
-bool FakeBusDriver::writeAndRead(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx)
+bool FakeBusDriver::write_and_read(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx)
 {
-	m_rxCount++;
-	m_txCount++;
+	m_rx_count++;
+	m_tx_count++;
 
-	assert(tx.size() <= m_txBuffer.size());
+	assert(tx.size() <= m_tx_buffer.size());
 
-	std::copy(std::begin(tx), std::end(tx), std::begin(m_txBuffer));
-	m_txView = std::span<uint8_t>(m_txBuffer.data(), tx.size());
+	std::copy(std::begin(tx), std::end(tx), std::begin(m_tx_buffer));
+	m_tx_view = std::span<uint8_t>(m_tx_buffer.data(), tx.size());
 
-	const auto view = m_rxView.subspan(0, std::min(rx.size(), m_rxView.size()));
+	const auto view = m_rx_view.subspan(0, std::min(rx.size(), m_rx_view.size()));
 	std::copy(std::begin(view), std::end(view), std::begin(rx));
 
-	return m_returnValue;
+	return m_return_value;
 }
 
-void FakeBusDriver::setRxData(std::span<const uint8_t> rx)
+void FakeBusDriver::set_rx_data(std::span<const uint8_t> rx)
 {
-	assert(rx.size() <= m_rxBuffer.size());
+	assert(rx.size() <= m_rx_buffer.size());
 
-	std::copy(std::begin(rx), std::end(rx), std::begin(m_rxBuffer));
-	m_rxView = std::span<uint8_t>(m_rxBuffer.data(), rx.size());
+	std::copy(std::begin(rx), std::end(rx), std::begin(m_rx_buffer));
+	m_rx_view = std::span<uint8_t>(m_rx_buffer.data(), rx.size());
 }

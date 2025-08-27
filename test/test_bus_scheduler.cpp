@@ -7,14 +7,15 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include "libecl/communication/bus_scheduler.h"
+#include "libecl/communication/i2c/bus_scheduler.hpp"
 
 #include "fakes/fake_bus_driver.h"
+#include "libecl/communication/i2c/transaction.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 #include <type_traits>
 
-using namespace ecl::communication;
+using namespace libecl::communication::i2c;
 
 // static_assert(std::is_default_constructible_v<BusScheduler>);
 // static_assert(std::is_nothrow_constructible_v<BusScheduler>);
@@ -40,8 +41,8 @@ SCENARIO("BusScheduler: initialization")
 
 		THEN("no bus activity is triggered")
 		{
-			REQUIRE(bus.m_txCount == 0);
-			REQUIRE(bus.m_rxCount == 0);
+			REQUIRE(bus.m_tx_count == 0);
+			REQUIRE(bus.m_rx_count == 0);
 		}
 	}
 }
@@ -56,11 +57,11 @@ SCENARIO("BusScheduler: blocking read")
 		WHEN("a blocking read is executed successfully")
 		{
 			static constexpr std::array<uint8_t, 4> rxReference = {0xFF, 0xFF, 0xA5, 0x4B};
-			bus.setRxData(std::span{rxReference});
+			bus.set_rx_data(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			const auto transaction = Transaction{0xAB, Transaction::Type::Read, {}, rxData};
-			REQUIRE(dut.blockingTransaction(transaction));
+			REQUIRE(dut.blocking_transaction(transaction));
 
 			THEN("RX data is filled with response data")
 			{
@@ -68,21 +69,21 @@ SCENARIO("BusScheduler: blocking read")
 			}
 			THEN("only one read is triggered")
 			{
-				REQUIRE(bus.m_txCount == 0);
-				REQUIRE(bus.m_rxCount == 1);
+				REQUIRE(bus.m_tx_count == 0);
+				REQUIRE(bus.m_rx_count == 1);
 			}
 		}
 
 		WHEN("a blocking read fails")
 		{
-			bus.m_returnValue = false;
+			bus.m_return_value = false;
 
 			static constexpr std::array<uint8_t, 4> rxReference = {0xFF, 0xFF, 0xA5, 0x4B};
-			bus.setRxData(std::span{rxReference});
+			bus.set_rx_data(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			const auto transaction = Transaction{0xA5, Transaction::Type::Read, {}, rxData};
-			const auto result = dut.blockingTransaction(transaction);
+			const auto result = dut.blocking_transaction(transaction);
 
 			THEN("the transaction fails")
 			{
@@ -103,26 +104,26 @@ SCENARIO("BusScheduler: blocking write")
 		{
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
 			const auto transaction = Transaction{0x5A, Transaction::Type::Write, txData, {}};
-			REQUIRE(dut.blockingTransaction(transaction));
+			REQUIRE(dut.blocking_transaction(transaction));
 
 			THEN("TX data is send to the BusDriver")
 			{
-				REQUIRE(memcmp(bus.m_txView.data(), txData.data(), txData.size()) == 0);
+				REQUIRE(memcmp(bus.m_tx_view.data(), txData.data(), txData.size()) == 0);
 			}
 			THEN("only one transaction is triggered")
 			{
-				REQUIRE(bus.m_txCount == 1);
-				REQUIRE(bus.m_rxCount == 0);
+				REQUIRE(bus.m_tx_count == 1);
+				REQUIRE(bus.m_rx_count == 0);
 			}
 		}
 
 		WHEN("a blocking write fails")
 		{
-			bus.m_returnValue = false;
+			bus.m_return_value = false;
 
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
 			const auto transaction = Transaction{0xAA, Transaction::Type::Write, txData, {}};
-			const auto result = dut.blockingTransaction(transaction);
+			const auto result = dut.blocking_transaction(transaction);
 
 			THEN("the transaction fails")
 			{
@@ -142,12 +143,12 @@ SCENARIO("BusScheduler: blocking transaction")
 		WHEN("a blocking transaction is executed successfully")
 		{
 			static constexpr std::array<uint8_t, 4> rxReference = {0xFF, 0xFF, 0xA5, 0x4B};
-			bus.setRxData(std::span{rxReference});
+			bus.set_rx_data(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
 			const auto transaction = Transaction{0xEF, Transaction::Type::WriteRead, txData, rxData};
-			REQUIRE(dut.blockingTransaction(transaction));
+			REQUIRE(dut.blocking_transaction(transaction));
 
 			THEN("RX data is filled with response data")
 			{
@@ -155,26 +156,26 @@ SCENARIO("BusScheduler: blocking transaction")
 			}
 			THEN("TX data is send to the BusDriver")
 			{
-				REQUIRE(memcmp(bus.m_txView.data(), txData.data(), txData.size()) == 0);
+				REQUIRE(memcmp(bus.m_tx_view.data(), txData.data(), txData.size()) == 0);
 			}
 			THEN("only one transaction is triggered")
 			{
-				REQUIRE(bus.m_txCount == 1);
-				REQUIRE(bus.m_rxCount == 1);
+				REQUIRE(bus.m_tx_count == 1);
+				REQUIRE(bus.m_rx_count == 1);
 			}
 		}
 
 		WHEN("a blocking transaction fails")
 		{
-			bus.m_returnValue = false;
+			bus.m_return_value = false;
 
 			static constexpr std::array<uint8_t, 4> rxReference = {0xFF, 0xFF, 0xA5, 0x4B};
-			bus.setRxData(std::span{rxReference});
+			bus.set_rx_data(std::span{rxReference});
 
 			std::array<uint8_t, 4> rxData = {0x00, 0x00, 0x00, 0x00};
 			std::array<uint8_t, 4> txData = {0xF0, 0x0E, 0xD0, 0x0A};
 			const auto transaction = Transaction{0x0D, Transaction::Type::WriteRead, txData, rxData};
-			const auto result = dut.blockingTransaction(transaction);
+			const auto result = dut.blocking_transaction(transaction);
 
 			THEN("the transaction fails")
 			{

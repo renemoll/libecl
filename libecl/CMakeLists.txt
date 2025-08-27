@@ -19,9 +19,13 @@ target_sources(libecl
 		BASE_DIRS
 			"${CMAKE_CURRENT_LIST_DIR}/include"
 		FILES
-			"include/libecl/communication/bus_scheduler.h"
+			"include/libecl/communication/i2c/bus_scheduler.hpp"
+			"include/libecl/communication/i2c/channel.hpp"
+			"include/libecl/communication/i2c/ibus_driver.hpp"
+			"include/libecl/communication/i2c/transaction.hpp"
 	PRIVATE
-		"src/communication/bus_scheduler.cpp"
+		"src/communication/i2c/bus_scheduler.cpp"
+		"src/communication/i2c/channel.cpp"
 )
 
 target_compile_features(libecl

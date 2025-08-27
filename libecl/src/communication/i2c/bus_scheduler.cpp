@@ -7,14 +7,15 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include "libecl/communication/bus_scheduler.h"
+#include "libecl/communication/i2c/bus_scheduler.hpp"
 
-#include "libecl/communication/ibus_driver.h"
+#include "libecl/communication/i2c/ibus_driver.hpp"
+#include "libecl/communication/i2c/transaction.hpp"
 
-namespace ecl::communication {
+namespace libecl::communication::i2c {
 BusScheduler::BusScheduler(IBusDriver& bus)
-	: m_queue{}
-	, m_bus{&bus}
+	: /*m_queue{}, */
+	m_bus{&bus}
 {
 }
 
@@ -23,19 +24,19 @@ BusScheduler::BusScheduler(IBusDriver& bus)
  * \todo return code
  * \todo transaction can fail...
  */
-bool BusScheduler::blockingTransaction(const Transaction& transaction)
+bool BusScheduler::blocking_transaction(const Transaction& transaction)
 {
 	switch (transaction.m_type) {
 		case Transaction::Type::Read: {
-			return m_bus->read(transaction.m_deviceAddress, transaction.m_rx);
+			return m_bus->read(transaction.m_device_address, transaction.m_rx);
 		} break;
 
 		case Transaction::Type::Write: {
-			return m_bus->write(transaction.m_deviceAddress, transaction.m_tx);
+			return m_bus->write(transaction.m_device_address, transaction.m_tx);
 		} break;
 
 		case Transaction::Type::WriteRead: {
-			return m_bus->writeAndRead(transaction.m_deviceAddress, transaction.m_tx, transaction.m_rx);
+			return m_bus->write_and_read(transaction.m_device_address, transaction.m_tx, transaction.m_rx);
 		} break;
 	}
 
@@ -56,4 +57,4 @@ bool BusScheduler::blockingTransaction(const Transaction& transaction)
 // void BusScheduler::transferComplete() {}
 // void BusScheduler::transferFailed() {}
 
-}  // namespace ecl::communication
+}  // namespace libecl::communication::i2c

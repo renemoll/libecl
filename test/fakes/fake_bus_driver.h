@@ -7,30 +7,30 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#ifndef ECL_TEST_FAKE_BUS_DRIVER_H
-#define ECL_TEST_FAKE_BUS_DRIVER_H
+#ifndef LIBECL_TEST_FAKE_BUS_DRIVER_H
+#define LIBECL_TEST_FAKE_BUS_DRIVER_H
 
-#include "libecl/communication/ibus_driver.h"
+#include "libecl/communication/i2c/ibus_driver.hpp"
 
-class FakeBusDriver : public ecl::communication::IBusDriver
+class FakeBusDriver : public libecl::communication::i2c::IBusDriver
 {
 public:
 	bool read(uint8_t device_address, std::span<uint8_t> rx) override;
 	bool write(uint8_t device_address, std::span<const uint8_t> tx) override;
-	bool writeAndRead(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx) override;
+	bool write_and_read(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx) override;
 
-	void setRxData(std::span<const uint8_t> rx);
+	void set_rx_data(std::span<const uint8_t> rx);
 
-	std::array<uint8_t, 256> m_txBuffer = {};
-	std::span<uint8_t> m_txView = {};
+	std::array<uint8_t, 256> m_tx_buffer = {};
+	std::span<uint8_t> m_tx_view = {};
 
-	std::array<uint8_t, 256> m_rxBuffer = {};
-	std::span<uint8_t> m_rxView = {};
+	std::array<uint8_t, 256> m_rx_buffer = {};
+	std::span<uint8_t> m_rx_view = {};
 
-	std::size_t m_txCount = 0;
-	std::size_t m_rxCount = 0;
+	std::size_t m_tx_count = 0;
+	std::size_t m_rx_count = 0;
 
-	bool m_returnValue = true;
+	bool m_return_value = true;
 };
 
 #endif

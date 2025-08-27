@@ -35,3 +35,6 @@ UseColor:         true
 ExtraArgs:
   - -Wno-unknown-warning-option
   - -Wno-error=unused-command-line-argument
+CheckOptions:
+ - key:   readability-identifier-length.MinimumParameterNameLength
+   value: 2
