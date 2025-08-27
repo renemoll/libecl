@@ -7,14 +7,14 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#ifndef ECL_COMMUNICATION_BUS_SCHEDULER_H
-#define ECL_COMMUNICATION_BUS_SCHEDULER_H
+#ifndef LIBECL_COMMUNICATION_I2C_BUS_SCHEDULER_H
+#define LIBECL_COMMUNICATION_I2C_BUS_SCHEDULER_H
 
-#include "libecl/communication/transaction.h"
-#include "libecl/containers/fifo.hpp"
+// #include "libecl/containers/fifo.hpp"
 
-namespace ecl::communication {
+namespace libecl::communication::i2c {
 class IBusDriver;
+struct Transaction;
 
 class BusScheduler
 {
@@ -26,18 +26,17 @@ public:
 	BusScheduler(BusScheduler&&) = delete;
 	BusScheduler& operator=(BusScheduler&&) = delete;
 
-	bool blockingTransaction(const Transaction& transaction);
-	// void scheduleTransaction(const Transaction& transaction);
+	bool blocking_transaction(const Transaction& transaction);
+	// void schedule_transaction(const Transaction& transaction);
 
 	// void transferComplete();
 	// void transferFailed();
 
 private:
 	// TODO: make size configurable...
-	// TODO: mpsc fifo
-	ecl::containers::Fifo<Transaction, 4> m_queue;
+	// ecl::containers::Fifo<Transaction, 4> m_queue;
 	IBusDriver* m_bus;
 };
-}  // namespace ecl::communication
+}  // namespace libecl::communication::i2c
 
 #endif
