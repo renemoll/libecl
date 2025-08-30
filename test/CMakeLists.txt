@@ -14,7 +14,7 @@ add_executable(unittests)
 
 target_sources(unittests
 	PRIVATE
-		test_fifo.cpp
+		test_queue.cpp
 )
 
 target_link_libraries(unittests

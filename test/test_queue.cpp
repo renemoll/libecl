@@ -7,60 +7,52 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include "libecl/containers/fifo.hpp"
+#include "libecl/containers/queue.hpp"
 
 #include <cstdint>
 #include <type_traits>
 
 #include "catch2/catch_test_macros.hpp"
 
-using namespace ecl::containers;
+using namespace libecl::containers;
 
-static_assert(std::is_default_constructible_v<Fifo<uint8_t, 6>>);
-static_assert(std::is_nothrow_constructible_v<Fifo<uint8_t, 6>>);
+static_assert(std::is_default_constructible_v<Queue<uint8_t, 6>>);
+static_assert(std::is_nothrow_constructible_v<Queue<uint8_t, 6>>);
 
-static_assert(std::is_default_constructible_v<Fifo<uint8_t, 6>>);
-static_assert(std::is_nothrow_default_constructible_v<Fifo<uint8_t, 6>>);
+static_assert(std::is_default_constructible_v<Queue<uint8_t, 6>>);
+static_assert(std::is_nothrow_default_constructible_v<Queue<uint8_t, 6>>);
 
-static_assert(!std::is_copy_constructible_v<Fifo<uint8_t, 6>>);
-static_assert(!std::is_copy_assignable_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_copy_constructible_v<Queue<uint8_t, 6>>);
+static_assert(!std::is_copy_assignable_v<Queue<uint8_t, 6>>);
 
-static_assert(!std::is_move_constructible_v<Fifo<uint8_t, 6>>);
-static_assert(!std::is_nothrow_move_constructible_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_move_constructible_v<Queue<uint8_t, 6>>);
+static_assert(!std::is_nothrow_move_constructible_v<Queue<uint8_t, 6>>);
 
-static_assert(!std::is_move_assignable_v<Fifo<uint8_t, 6>>);
-static_assert(!std::is_nothrow_move_assignable_v<Fifo<uint8_t, 6>>);
+static_assert(!std::is_move_assignable_v<Queue<uint8_t, 6>>);
+static_assert(!std::is_nothrow_move_assignable_v<Queue<uint8_t, 6>>);
 
-SCENARIO("FIFO: initialization")
+SCENARIO("Queue: initialization")
 {
-	WHEN("constructing a FIFO")
+	WHEN("constructing a queue")
 	{
-		const Fifo<uint8_t, 6> dut{};
+		const Queue<uint8_t, 6> dut{};
 
 		THEN("capacity matches with the fixed size")
 		{
 			REQUIRE(dut.capacity() == 6U);
 		}
-		THEN("size is zero")
-		{
-			REQUIRE(dut.size() == 0);
-		}
-		THEN("fifo is empty")
+		THEN("queue is empty")
 		{
 			REQUIRE(dut.empty());
-		}
-		THEN("fifo is not full")
-		{
-			REQUIRE_FALSE(dut.full());
 		}
 	}
 }
 
-SCENARIO("FIFO: adding data")
+SCENARIO("Queue: adding data")
 {
-	GIVEN("an empty FIFO")
+	GIVEN("an empty queue")
 	{
-		Fifo<std::size_t, 6> dut{};
+		Queue<std::size_t, 6> dut{};
 
 		WHEN("pushing a single element")
 		{
@@ -70,17 +62,9 @@ SCENARIO("FIFO: adding data")
 			{
 				REQUIRE(dut.front() == 1);
 			}
-			THEN("size is one")
-			{
-				REQUIRE(dut.size() == 1);
-			}
-			THEN("fifo is not empty")
+			THEN("queue is not empty")
 			{
 				REQUIRE_FALSE(dut.empty());
-			}
-			THEN("fifo is not full")
-			{
-				REQUIRE_FALSE(dut.full());
 			}
 		}
 
@@ -89,27 +73,20 @@ SCENARIO("FIFO: adding data")
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.push(i + 1));
 
-				THEN("the size increases")
-				{
-					REQUIRE(dut.size() == (i + 1));
-				}
 				THEN("the front remains intact")
 				{
 					REQUIRE(dut.front() == 1);
 				}
 			}
 
-			THEN("size matches capacity")
+			THEN("no new data can be queued")
 			{
-				REQUIRE(dut.size() == dut.capacity());
+				REQUIRE_FALSE(dut.push(0));
 			}
-			THEN("fifo is not empty")
+
+			THEN("queue is not empty")
 			{
 				REQUIRE_FALSE(dut.empty());
-			}
-			THEN("fifo is full")
-			{
-				REQUIRE(dut.full());
 			}
 		}
 
@@ -118,47 +95,37 @@ SCENARIO("FIFO: adding data")
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.emplace(i + 1));
 
-				THEN("the size increases")
-				{
-					REQUIRE(dut.size() == (i + 1));
-				}
 				THEN("the front remains intact")
 				{
 					REQUIRE(dut.front() == 1);
 				}
 			}
 
-			THEN("size matches capacity")
+			THEN("no new data can be queued")
 			{
-				REQUIRE(dut.size() == dut.capacity());
+				REQUIRE_FALSE(dut.push(0));
 			}
-			THEN("fifo is not empty")
+
+			THEN("queue is not empty")
 			{
 				REQUIRE_FALSE(dut.empty());
-			}
-			THEN("fifo is full")
-			{
-				REQUIRE(dut.full());
 			}
 		}
 	}
 
-	GIVEN("a full FIFO")
+	GIVEN("a full queue")
 	{
-		Fifo<std::size_t, 6> dut{};
+		Queue<std::size_t, 6> dut{};
 		for (std::size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(i + 1));
 		}
-		REQUIRE(dut.size() == dut.capacity());
 		REQUIRE(dut.front() == 1);
-		REQUIRE(dut.full());
 
 		WHEN("pushing additional data")
 		{
-			const auto result = dut.push(99);
 			THEN("push fails")
 			{
-				REQUIRE_FALSE(result);
+				REQUIRE_FALSE(dut.push(99));
 			}
 			THEN("the oldest entry is retained")
 			{
@@ -168,10 +135,9 @@ SCENARIO("FIFO: adding data")
 
 		WHEN("emplacing additional data")
 		{
-			const auto* result = dut.emplace(99U);
 			THEN("emplace fails")
 			{
-				REQUIRE_FALSE(result);
+				REQUIRE(dut.emplace(99U) == nullptr);
 			}
 			THEN("the oldest entry is overwritten")
 			{
@@ -182,32 +148,23 @@ SCENARIO("FIFO: adding data")
 		WHEN("only after data is popped")
 		{
 			REQUIRE(dut.pop());
-			REQUIRE(dut.size() == (dut.capacity() - 1));
-			REQUIRE_FALSE(dut.full());
-
 			REQUIRE(dut.pop());
-			REQUIRE(dut.size() == (dut.capacity() - 2));
-			REQUIRE_FALSE(dut.full());
 
 			THEN("new data can be pushed to the queue")
 			{
 				REQUIRE(dut.push(dut.capacity()));
-				REQUIRE(dut.size() == (dut.capacity() - 1));
-				REQUIRE_FALSE(dut.full());
-
 				REQUIRE(dut.push(dut.capacity() + 1));
-				REQUIRE(dut.size() == dut.capacity());
-				REQUIRE(dut.full());
+				REQUIRE_FALSE(dut.push(dut.capacity() + 2));
 			}
 		}
 	}
 }
 
-SCENARIO("FIFO: removing data")
+SCENARIO("Queue: removing data")
 {
-	GIVEN("an empty FIFO")
+	GIVEN("an empty queue")
 	{
-		Fifo<uint8_t, 6> dut{};
+		Queue<uint8_t, 6> dut{};
 
 		WHEN("popping data")
 		{
@@ -216,31 +173,26 @@ SCENARIO("FIFO: removing data")
 			{
 				REQUIRE_FALSE(result);
 			}
-			THEN("fifo remains empty")
+			THEN("queue remains empty")
 			{
-				REQUIRE(dut.size() == 0);
 				REQUIRE(dut.empty());
 			}
 		}
 	}
 
-	GIVEN("a FIFO full of data")
+	GIVEN("a queue full of data")
 	{
-		Fifo<uint8_t, 6> dut{};
+		Queue<uint8_t, 6> dut{};
 		for (std::size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(static_cast<uint8_t>(i + 1)));
 		}
-		REQUIRE(dut.full());
+		REQUIRE_FALSE(dut.push(0));
 
 		WHEN("front is called")
 		{
-			THEN("the oldest entry is retruned")
+			THEN("the oldest entry is returned")
 			{
 				REQUIRE(dut.front() == 1);
-			}
-			THEN("size remains unchanged")
-			{
-				REQUIRE(dut.size() == dut.capacity());
 			}
 		}
 
@@ -252,19 +204,11 @@ SCENARIO("FIFO: removing data")
 			{
 				REQUIRE(dut.front() == 2);
 			}
-			THEN("size decreases")
-			{
-				REQUIRE(dut.size() < dut.capacity());
-			}
-			THEN("fifo is not full")
-			{
-				REQUIRE_FALSE(dut.full());
-			}
 		}
 
 		WHEN("pop is called until empty")
 		{
-			REQUIRE(dut.size() == 6);
+			REQUIRE_FALSE(dut.push(0));
 
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				THEN("front retruns the oldest entry")
@@ -273,16 +217,10 @@ SCENARIO("FIFO: removing data")
 				}
 
 				REQUIRE(dut.pop());
-
-				THEN("size decreases")
-				{
-					REQUIRE(dut.size() < dut.capacity());
-				}
 			}
 
-			THEN("FIFO is empty")
+			THEN("queue is empty")
 			{
-				REQUIRE(dut.size() == 0);
 				REQUIRE(dut.empty());
 			}
 		}
@@ -294,7 +232,7 @@ int deallocations = 0;
 int copied = 0;
 int moved = 0;
 
-SCENARIO("FIFO: store objects")
+SCENARIO("Queue: store objects")
 {
 	class Element
 	{
@@ -337,20 +275,16 @@ SCENARIO("FIFO: store objects")
 	static_assert(std::is_copy_constructible_v<Element>);
 	static_assert(std::is_move_constructible_v<Element>);
 
-	GIVEN("an empty FIFO")
+	GIVEN("an empty queue")
 	{
-		Fifo<Element, 6> dut{};
+		Queue<Element, 6> dut{};
 
-		WHEN("pushing data to the FIFO")
+		WHEN("pushing data to the queue")
 		{
 			REQUIRE(dut.push(Element{2}));
 			REQUIRE(dut.push(Element{}));
 			REQUIRE(dut.push(Element{4}));
 
-			THEN("size matches")
-			{
-				REQUIRE(dut.size() == 3);
-			}
 			THEN("number of allocations match calls to push")
 			{
 				REQUIRE(allocations == 3);
@@ -363,7 +297,7 @@ SCENARIO("FIFO: store objects")
 			{
 				dut.clear();
 
-				THEN("fifo is empty")
+				THEN("queue is empty")
 				{
 					REQUIRE(dut.empty());
 				}
@@ -416,7 +350,7 @@ SCENARIO("FIFO: store objects")
 	}
 }
 
-SCENARIO("FIFO: store objects without default constructors")
+SCENARIO("Queue: store objects without default constructors")
 {
 	class Element
 	{
@@ -459,19 +393,15 @@ SCENARIO("FIFO: store objects without default constructors")
 	static_assert(std::is_copy_constructible_v<Element>);
 	static_assert(std::is_move_constructible_v<Element>);
 
-	GIVEN("an empty FIFO")
+	GIVEN("an empty queue")
 	{
-		Fifo<Element, 6> dut{};
+		Queue<Element, 6> dut{};
 
-		WHEN("pushing data to the FIFO")
+		WHEN("pushing data to the queue")
 		{
 			REQUIRE(dut.push(Element{2}));
 			REQUIRE(dut.push(Element{4}));
 
-			THEN("size matches")
-			{
-				REQUIRE(dut.size() == 2);
-			}
 			THEN("number of allocations match calls to push")
 			{
 				REQUIRE(allocations == 2);
@@ -484,7 +414,7 @@ SCENARIO("FIFO: store objects without default constructors")
 			{
 				dut.clear();
 
-				THEN("fifo is empty")
+				THEN("queue is empty")
 				{
 					REQUIRE(dut.empty());
 				}

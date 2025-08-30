@@ -19,7 +19,8 @@ target_sources(libecl
 		BASE_DIRS
 			"${CMAKE_CURRENT_LIST_DIR}/include"
 		FILES
-			"include/libecl/containers/fifo.hpp"
+			"include/libecl/containers/aligned_storage.hpp"
+			"include/libecl/containers/queue.hpp"
 )
 
 target_compile_features(libecl
