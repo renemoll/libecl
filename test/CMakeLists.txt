@@ -16,7 +16,7 @@ target_sources(unittests
 	PRIVATE
 		fakes/fake_bus_driver.cpp
 		test_bus_scheduler.cpp
-		test_fifo.cpp
+		test_queue.cpp
 )
 
 target_link_libraries(unittests

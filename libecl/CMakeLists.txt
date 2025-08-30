@@ -23,6 +23,8 @@ target_sources(libecl
 			"include/libecl/communication/i2c/channel.hpp"
 			"include/libecl/communication/i2c/ibus_driver.hpp"
 			"include/libecl/communication/i2c/transaction.hpp"
+			"include/libecl/containers/aligned_storage.hpp"
+			"include/libecl/containers/queue.hpp"
 	PRIVATE
 		"src/communication/i2c/bus_scheduler.cpp"
 		"src/communication/i2c/channel.cpp"
