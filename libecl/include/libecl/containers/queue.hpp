@@ -24,6 +24,13 @@ namespace libecl::containers {
  * \tparam N Queue capacity.
  *
  * Single Producer, Single Consumer queue with fixed capacity.
+ * - Fixed capacity
+ * - Wait-free & lock-free
+ *
+ * \todo Conversion to value_type
+ * \todo noexcept?
+ * \todo memory orders
+ * \todo deconstructor clears the queue
  */
 template <typename T, std::size_t N>
 class Queue
