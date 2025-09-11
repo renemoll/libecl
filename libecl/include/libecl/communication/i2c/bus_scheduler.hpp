@@ -10,16 +10,22 @@
 #ifndef LIBECL_COMMUNICATION_I2C_BUS_SCHEDULER_H
 #define LIBECL_COMMUNICATION_I2C_BUS_SCHEDULER_H
 
-// #include "libecl/containers/fifo.hpp"
+#include "libecl/communication/i2c/transaction.hpp"
+#include "libecl/containers/queue.hpp"
+
+#include <atomic>
 
 namespace libecl::communication::i2c {
-class IBusDriver;
-struct Transaction;
+class BusDriverInterface;
 
+/*!
+ * \brief
+ * \todo make queue size configurable...
+ */
 class BusScheduler
 {
 public:
-	explicit BusScheduler(IBusDriver& bus);
+	explicit BusScheduler(BusDriverInterface& bus);
 	~BusScheduler() = default;
 	BusScheduler(const BusScheduler&) = delete;
 	BusScheduler& operator=(const BusScheduler&) = delete;
@@ -27,15 +33,16 @@ public:
 	BusScheduler& operator=(BusScheduler&&) = delete;
 
 	bool blocking_transaction(const Transaction& transaction);
-	// void schedule_transaction(const Transaction& transaction);
+	void schedule_transaction(const Transaction& transaction);
 
-	// void transferComplete();
-	// void transferFailed();
+	void on_transfer_complete();
+	void on_transfer_error();
 
 private:
-	// TODO: make size configurable...
-	// ecl::containers::Fifo<Transaction, 4> m_queue;
-	IBusDriver* m_bus;
+	containers::Queue<Transaction, 10> m_queue;
+	BusDriverInterface* m_bus;
+
+	std::atomic<bool> m_busy;
 };
 }  // namespace libecl::communication::i2c
 

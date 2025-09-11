@@ -9,13 +9,14 @@
 
 #include "libecl/communication/i2c/bus_scheduler.hpp"
 
-#include "libecl/communication/i2c/ibus_driver.hpp"
+#include "libecl/communication/i2c/bus_driver_interface.hpp"
 #include "libecl/communication/i2c/transaction.hpp"
 
 namespace libecl::communication::i2c {
-BusScheduler::BusScheduler(IBusDriver& bus)
-	: /*m_queue{}, */
-	m_bus{&bus}
+BusScheduler::BusScheduler(BusDriverInterface& bus)
+	: m_queue{}
+	, m_bus{&bus}
+	, m_busy{false}
 {
 }
 

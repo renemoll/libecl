@@ -19,9 +19,9 @@ target_sources(libecl
 		BASE_DIRS
 			"${CMAKE_CURRENT_LIST_DIR}/include"
 		FILES
+			"include/libecl/communication/i2c/bus_driver_interface.hpp"
 			"include/libecl/communication/i2c/bus_scheduler.hpp"
 			"include/libecl/communication/i2c/channel.hpp"
-			"include/libecl/communication/i2c/ibus_driver.hpp"
 			"include/libecl/communication/i2c/transaction.hpp"
 			"include/libecl/containers/aligned_storage.hpp"
 			"include/libecl/containers/queue.hpp"

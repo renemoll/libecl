@@ -16,19 +16,21 @@
 namespace libecl::communication::i2c {
 class BusScheduler;
 
+/*!
+ * \class I2cChannel
+ * \brief Provides a communication channel over I2C to a specific device.
+ *
+ * This class is to be exposed the users (device drivers for example) of the I2C bus to
+ * communicate to a physical device.
+ *
+ * \todo 10 bit address?
+ * \todo 16 bit registers?
+ * \todo schedule functions
+ * \todo on completion callbacks
+ */
 class I2cChannel
 {
 public:
-	/**
-	 * \class I2cChannel
-	 * \brief Provides an communication channel over I2C to a specific device.
-	 *
-	 * This class is to be exposed the users (device drivers for example) of the I2C bus to
-	 * communicate to a physical device.
-	 *
-	 * \todo 10 bit address?
-	 * \todo 16 bit registers?
-	 */
 	I2cChannel(BusScheduler& scheduler, uint8_t device_address);
 
 	[[nodiscard]] bool read(std::span<uint8_t> rx);
