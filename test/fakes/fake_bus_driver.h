@@ -10,9 +10,9 @@
 #ifndef LIBECL_TEST_FAKE_BUS_DRIVER_H
 #define LIBECL_TEST_FAKE_BUS_DRIVER_H
 
-#include "libecl/communication/i2c/ibus_driver.hpp"
+#include "libecl/communication/i2c/bus_driver_interface.hpp"
 
-class FakeBusDriver : public libecl::communication::i2c::IBusDriver
+class FakeBusDriver : public libecl::communication::i2c::BusDriverInterface
 {
 public:
 	bool read(uint8_t device_address, std::span<uint8_t> rx) override;

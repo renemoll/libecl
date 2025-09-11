@@ -14,7 +14,7 @@
 #include <span>
 
 namespace libecl::communication::i2c {
-/**
+/*!
  * \class Transaction
  * \brief Holds all data to perform a single I2C transaction.
  *

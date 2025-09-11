@@ -7,31 +7,29 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#ifndef LIBECL_COMMUNICATION_I2C_IBUS_DRIVER_H
-#define LIBECL_COMMUNICATION_I2C_IBUS_DRIVER_H
+#ifndef LIBECL_COMMUNICATION_I2C_BUS_DRIVER_INTERFACE_H
+#define LIBECL_COMMUNICATION_I2C_BUS_DRIVER_INTERFACE_H
 
 #include <cstdint>
 #include <span>
 
 namespace libecl::communication::i2c {
-/**
- * \class IBusDriver
+/*!
+ * \class BusDriverInterface
  * \brief Interface for I2C peripheral drivers.
  * \note  The implementation is platform depended.
- *
- * \a IBusDriver provdes an interface for I2C peripheral drivers to be used with \a BusScheduler.
- * \todo Reduce to simple configure and transfer functions...
- * \todo rename BusDriverInterface
  */
-class IBusDriver
+class BusDriverInterface
 {
 public:
-	IBusDriver() = default;
-	virtual ~IBusDriver() = default;
-	IBusDriver(const IBusDriver&) = delete;
-	IBusDriver& operator=(const IBusDriver&) = delete;
+	BusDriverInterface() = default;
+	virtual ~BusDriverInterface() = default;
+	BusDriverInterface(const BusDriverInterface&) = delete;
+	BusDriverInterface& operator=(const BusDriverInterface&) = delete;
+	BusDriverInterface(BusDriverInterface&&) = default;
+	BusDriverInterface& operator=(BusDriverInterface&&) = default;
 
-	/**
+	/*!
 	 * \brief Read bytes from a I2C device.
 	 * \note  The number of bytes read is determined by the size of the \a rx buffer.
 	 *
@@ -40,7 +38,7 @@ public:
 	 */
 	virtual bool read(uint8_t device_address, std::span<uint8_t> rx) = 0;
 
-	/**
+	/*!
 	 * \brief Write bytes to a I2C device.
 	 * \note  The number of bytes written is determined by the size of the \a tx buffer.
 	 *
@@ -49,14 +47,10 @@ public:
 	 */
 	virtual bool write(uint8_t device_address, std::span<const uint8_t> tx) = 0;
 
-	/**
+	/*!
 	 * \brief Perform a write operation followed by a read operation.
 	 */
 	virtual bool write_and_read(uint8_t device_address, std::span<const uint8_t> tx, std::span<uint8_t> rx) = 0;
-
-protected:
-	IBusDriver(IBusDriver&&) = default;
-	IBusDriver& operator=(IBusDriver&&) = default;
 };
 }  // namespace libecl::communication::i2c
 
