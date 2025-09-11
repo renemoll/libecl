@@ -16,28 +16,33 @@
 
 using namespace libecl::containers;
 
-static_assert(std::is_default_constructible_v<Queue<uint8_t, 6>>);
-static_assert(std::is_nothrow_constructible_v<Queue<uint8_t, 6>>);
+SCENARIO("Queue: type traits")
+{
+	using Q = Queue<uint8_t, 6>;
 
-static_assert(std::is_default_constructible_v<Queue<uint8_t, 6>>);
-static_assert(std::is_nothrow_default_constructible_v<Queue<uint8_t, 6>>);
+	static_assert(std::is_constructible_v<Q>);
+	static_assert(std::is_nothrow_constructible_v<Q>);
 
-static_assert(!std::is_copy_constructible_v<Queue<uint8_t, 6>>);
-static_assert(!std::is_copy_assignable_v<Queue<uint8_t, 6>>);
+	static_assert(std::is_default_constructible_v<Q>);
+	static_assert(std::is_nothrow_default_constructible_v<Q>);
 
-static_assert(!std::is_move_constructible_v<Queue<uint8_t, 6>>);
-static_assert(!std::is_nothrow_move_constructible_v<Queue<uint8_t, 6>>);
+	static_assert(!std::is_copy_constructible_v<Q>);
+	static_assert(!std::is_copy_assignable_v<Q>);
 
-static_assert(!std::is_move_assignable_v<Queue<uint8_t, 6>>);
-static_assert(!std::is_nothrow_move_assignable_v<Queue<uint8_t, 6>>);
+	static_assert(!std::is_move_constructible_v<Q>);
+	static_assert(!std::is_nothrow_move_constructible_v<Q>);
+
+	static_assert(!std::is_move_assignable_v<Q>);
+	static_assert(!std::is_nothrow_move_assignable_v<Q>);
+}
 
 SCENARIO("Queue: initialization")
 {
 	WHEN("constructing a queue")
 	{
-		const Queue<uint8_t, 6> dut{};
+		Queue<uint8_t, 6> dut{};
 
-		THEN("capacity matches with the fixed size")
+		THEN("capacity matches the fixed size")
 		{
 			REQUIRE(dut.capacity() == 6U);
 		}
@@ -45,14 +50,19 @@ SCENARIO("Queue: initialization")
 		{
 			REQUIRE(dut.empty());
 		}
+
+		THEN("pop fails")
+		{
+			REQUIRE_FALSE(dut.pop());
+		}
 	}
 }
 
-SCENARIO("Queue: adding data")
+SCENARIO("Queue: push/pop")
 {
 	GIVEN("an empty queue")
 	{
-		Queue<std::size_t, 6> dut{};
+		Queue<std::size_t, 7> dut{};
 
 		WHEN("pushing a single element")
 		{
@@ -88,27 +98,10 @@ SCENARIO("Queue: adding data")
 			{
 				REQUIRE_FALSE(dut.empty());
 			}
-		}
 
-		WHEN("emplacing data until full")
-		{
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
-				REQUIRE(dut.emplace(i + 1));
-
-				THEN("the front remains intact")
-				{
-					REQUIRE(dut.front() == 1);
-				}
-			}
-
-			THEN("no new data can be queued")
-			{
-				REQUIRE_FALSE(dut.push(0));
-			}
-
-			THEN("queue is not empty")
-			{
-				REQUIRE_FALSE(dut.empty());
+				REQUIRE(dut.front() == (i + 1));
+				dut.pop();
 			}
 		}
 	}
@@ -133,76 +126,19 @@ SCENARIO("Queue: adding data")
 			}
 		}
 
-		WHEN("emplacing additional data")
-		{
-			THEN("emplace fails")
-			{
-				REQUIRE(dut.emplace(99U) == nullptr);
-			}
-			THEN("the oldest entry is overwritten")
-			{
-				REQUIRE(dut.front() == 1);
-			}
-		}
-
 		WHEN("only after data is popped")
-		{
-			REQUIRE(dut.pop());
-			REQUIRE(dut.pop());
-
-			THEN("new data can be pushed to the queue")
-			{
-				REQUIRE(dut.push(dut.capacity()));
-				REQUIRE(dut.push(dut.capacity() + 1));
-				REQUIRE_FALSE(dut.push(dut.capacity() + 2));
-			}
-		}
-	}
-}
-
-SCENARIO("Queue: removing data")
-{
-	GIVEN("an empty queue")
-	{
-		Queue<uint8_t, 6> dut{};
-
-		WHEN("popping data")
-		{
-			const auto result = dut.pop();
-			THEN("pop fails")
-			{
-				REQUIRE_FALSE(result);
-			}
-			THEN("queue remains empty")
-			{
-				REQUIRE(dut.empty());
-			}
-		}
-	}
-
-	GIVEN("a queue full of data")
-	{
-		Queue<uint8_t, 6> dut{};
-		for (std::size_t i = 0; i < dut.capacity(); ++i) {
-			REQUIRE(dut.push(static_cast<uint8_t>(i + 1)));
-		}
-		REQUIRE_FALSE(dut.push(0));
-
-		WHEN("front is called")
-		{
-			THEN("the oldest entry is returned")
-			{
-				REQUIRE(dut.front() == 1);
-			}
-		}
-
-		WHEN("pop is called")
 		{
 			REQUIRE(dut.pop());
 
 			THEN("the oldest entry is removed")
 			{
 				REQUIRE(dut.front() == 2);
+			}
+
+			THEN("new data can be pushed to the queue")
+			{
+				REQUIRE(dut.push(dut.capacity()));
+				REQUIRE_FALSE(dut.push(dut.capacity() + 1));
 			}
 		}
 
@@ -222,6 +158,93 @@ SCENARIO("Queue: removing data")
 			THEN("queue is empty")
 			{
 				REQUIRE(dut.empty());
+				REQUIRE_FALSE(dut.pop());
+			}
+		}
+	}
+}
+
+SCENARIO("Queue: emplace")
+{
+	GIVEN("an empty queue")
+	{
+		Queue<std::size_t, 3> dut{};
+
+		WHEN("pushing a single element")
+		{
+			REQUIRE(dut.emplace(1));
+
+			THEN("the element is stored")
+			{
+				REQUIRE(dut.front() == 1);
+			}
+			THEN("queue is not empty")
+			{
+				REQUIRE_FALSE(dut.empty());
+			}
+		}
+
+		WHEN("emplacing data until full")
+		{
+			for (std::size_t i = 0; i < dut.capacity(); ++i) {
+				REQUIRE(dut.emplace(i + 1));
+
+				THEN("the front remains intact")
+				{
+					REQUIRE(dut.front() == 1);
+				}
+			}
+
+			THEN("no new data can be queued")
+			{
+				REQUIRE_FALSE(dut.push(0));
+			}
+
+			THEN("queue is not empty")
+			{
+				REQUIRE_FALSE(dut.empty());
+			}
+
+			for (std::size_t i = 0; i < dut.capacity(); ++i) {
+				REQUIRE(dut.front() == (i + 1));
+				dut.pop();
+			}
+		}
+	}
+
+	GIVEN("a full queue")
+	{
+		Queue<std::size_t, 6> dut{};
+		for (std::size_t i = 0; i < dut.capacity(); ++i) {
+			REQUIRE(dut.push(i + 1));
+		}
+		REQUIRE(dut.front() == 1);
+
+		WHEN("emplacing additional data")
+		{
+			THEN("emplace fails")
+			{
+				REQUIRE(dut.emplace(99U) == nullptr);
+			}
+			THEN("the oldest entry is overwritten")
+			{
+				REQUIRE(dut.front() == 1);
+			}
+		}
+
+		WHEN("only after data is popped")
+		{
+			REQUIRE(dut.pop());
+
+			THEN("the oldest entry is removed")
+			{
+				REQUIRE(dut.front() == 2);
+			}
+
+			THEN("new data can be pushed to the queue")
+			{
+				REQUIRE(dut.emplace(dut.capacity()));
+				REQUIRE(dut.emplace(dut.capacity() + 1) == nullptr);
 			}
 		}
 	}
@@ -234,6 +257,11 @@ int moved = 0;
 
 SCENARIO("Queue: store objects")
 {
+	allocations = 0;
+	deallocations = 0;
+	copied = 0;
+	moved = 0;
+
 	class Element
 	{
 	public:
@@ -272,6 +300,7 @@ SCENARIO("Queue: store objects")
 
 		int m_i;
 	};
+	static_assert(std::is_default_constructible_v<Element>);
 	static_assert(std::is_copy_constructible_v<Element>);
 	static_assert(std::is_move_constructible_v<Element>);
 
@@ -352,15 +381,14 @@ SCENARIO("Queue: store objects")
 
 SCENARIO("Queue: store objects without default constructors")
 {
+	allocations = 0;
+	deallocations = 0;
+	copied = 0;
+	moved = 0;
+
 	class Element
 	{
 	public:
-		Element()
-			: m_i{0}
-		{
-			allocations++;
-		}
-
 		explicit Element(int i)
 			: m_i{i}
 		{
@@ -390,6 +418,7 @@ SCENARIO("Queue: store objects without default constructors")
 
 		int m_i;
 	};
+	static_assert(!std::is_default_constructible_v<Element>);
 	static_assert(std::is_copy_constructible_v<Element>);
 	static_assert(std::is_move_constructible_v<Element>);
 
