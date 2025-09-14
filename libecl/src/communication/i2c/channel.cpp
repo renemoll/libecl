@@ -13,25 +13,25 @@
 #include "libecl/communication/i2c/transaction.hpp"
 
 namespace libecl::communication::i2c {
-I2cChannel::I2cChannel(BusScheduler& scheduler, uint8_t device_address)
+Channel::Channel(BusScheduler& scheduler, uint8_t device_address)
 	: m_scheduler{&scheduler}
 	, m_device_address{device_address}
 {
 }
 
-bool I2cChannel::read(std::span<uint8_t> rx)
+bool Channel::read(std::span<uint8_t> rx)
 {
 	return m_scheduler->blocking_transaction(
 		{.m_device_address = m_device_address, .m_type = Transaction::Type::Read, .m_tx = {}, .m_rx = rx});
 }
 
-bool I2cChannel::write(std::span<const uint8_t> tx)
+bool Channel::write(std::span<const uint8_t> tx)
 {
 	return m_scheduler->blocking_transaction(
 		{.m_device_address = m_device_address, .m_type = Transaction::Type::Write, .m_tx = tx, .m_rx = {}});
 }
 
-bool I2cChannel::read_memory(const uint8_t address, std::span<uint8_t> rx)
+bool Channel::read_memory(const uint8_t address, std::span<uint8_t> rx)
 {
 	const auto tx_register = std::span<const uint8_t, 1>{&address, 1};
 	return m_scheduler->blocking_transaction({.m_device_address = m_device_address,
@@ -40,7 +40,7 @@ bool I2cChannel::read_memory(const uint8_t address, std::span<uint8_t> rx)
 											  .m_rx = rx});
 }
 
-bool I2cChannel::write_memory(const uint8_t address, std::span<uint8_t> tx)
+bool Channel::write_memory(const uint8_t address, std::span<uint8_t> tx)
 {
 	const auto tx_register = std::span<const uint8_t, 1>{&address, 1};
 	return write(tx_register) && write(tx);
