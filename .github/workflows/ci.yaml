@@ -11,23 +11,19 @@ on:
   pull_request:
 
 jobs:
-  build-devcontainer:
-    runs-on: ubuntu-latest
-    container:
-      image: 'ghcr.io/${{ github.repository }}:development'
-      credentials:
-         username: ${{ github.actor }}
-         password: ${{ secrets.GITHUB_TOKEN }}
+  # build-in-devcontainer:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
 
-      - name: Build debug
-        run: cmake --workflow --preset unittest-debug
-
-      - name: Build release
-        run: cmake --workflow --preset unittest-release
+  #     - name: Run make ci-build in dev container
+  #       uses: devcontainers/ci@v0.3
+  #       with:    
+  #         cacheFrom: ghcr.io/${{ github.repository }}:development
+  #         push: never
+  #         runCmd: cmake --workflow --preset unittest-release
 
   build-linux-gcc:
     strategy:
@@ -37,6 +33,7 @@ jobs:
         cxx: [20, 23]
 
     runs-on: ubuntu-latest
+  
     env:
       CC: gcc-${{ matrix.gcc }}
       CXX: g++-${{ matrix.gcc }}
@@ -57,7 +54,6 @@ jobs:
           ctest --test-dir build/ninja-debug/
 
       - name: Release build & test
-        # run: cmake --workflow --preset unittest-release
         run: |
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -B build/ninja-release -S .
           cmake --build build/ninja-release
