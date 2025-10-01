@@ -15,6 +15,8 @@ add_executable(unittests)
 target_sources(unittests
 	PRIVATE
 		test_aligned_storage.cpp
+		test_byte_reader.cpp
+		test_byte_writer.cpp
 		test_queue_spsc.cpp
 		test_maybe.cpp
 )
