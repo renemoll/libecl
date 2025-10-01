@@ -56,6 +56,14 @@ public:
 		return m_write == m_read;
 	}
 
+	[[nodiscard]] bool full() const
+	{
+		const size_type write_index = m_write;
+		const size_type next_write = (write_index + 1) % m_storage.size();
+
+		return next_write == m_read;
+	}
+
 	/*!
 	 * \returns A reference to the first element.
 	 * \pre     Queue must not be empty.
