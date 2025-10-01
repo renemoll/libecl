@@ -56,9 +56,18 @@ public:
 		return m_write == m_read;
 	}
 
+	[[nodiscard]] bool full() const
+	{
+		const size_type write_index = m_write;
+		const size_type next_write = (write_index + 1) % m_storage.size();
+
+		return next_write == m_read;
+	}
+
 	/*!
 	 * \returns A reference to the first element.
 	 * \pre     Queue must not be empty.
+	 * \todo    Remove need for assert
 	 */
 	[[nodiscard]] reference front()
 	{
@@ -69,6 +78,7 @@ public:
 	/*!
 	 * \returns A constant reference to the first element.
 	 * \pre     Queue must not be empty.
+	 * \todo    Remove need for assert
 	 */
 	[[nodiscard]] const_reference front() const
 	{
@@ -78,6 +88,7 @@ public:
 
 	/*!
 	 * \brief   Pushes the given \a value into an empty slot within the queue.
+	 * \param   value The value to store.
 	 * \returns True when \a valve is accepted, false if the queue is full.
 	 */
 	bool push(const_reference value)
@@ -96,6 +107,7 @@ public:
 
 	/*!
 	 * \brief   Pushes the given \a value into an empty slot within the queue.
+	 * \param   value The value to store.
 	 * \returns True when \a valve is accepted, false if the queue is full.
 	 */
 	bool push(r_reference value)
@@ -114,6 +126,7 @@ public:
 
 	/*!
 	 * \brief   Constructs a new object, in-place, in an empty slot within the queue.
+	 * \param   args The arguments to the new object.
 	 * \returns A pointer to the newly created object when space was available, nullptr otherwise.
 	 */
 	template <typename... Args>
