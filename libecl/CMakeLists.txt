@@ -27,6 +27,8 @@ target_sources(libecl
 			"include/libecl/concurrency/mutex.hpp"
 			"include/libecl/containers/aligned_storage.hpp"
 			"include/libecl/containers/queue_spsc.hpp"
+			"include/libecl/utilities/byte_reader.hpp"
+			"include/libecl/utilities/byte_writer.hpp"
 	PRIVATE
 		"src/communication/i2c/bus_scheduler.cpp"
 		"src/communication/i2c/channel.cpp"
