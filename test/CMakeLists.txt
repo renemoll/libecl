@@ -16,6 +16,8 @@ target_sources(unittests
 	PRIVATE
 		fakes/fake_bus_driver.cpp
 		test_bus_scheduler.cpp
+		test_byte_reader.cpp
+		test_byte_writer.cpp
 		test_queue.cpp
 )
 
