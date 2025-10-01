@@ -18,22 +18,22 @@ using namespace libecl::containers;
 
 SCENARIO("Queue: type traits")
 {
-	using Q = Queue<uint8_t, 6>;
+	using T = Queue<uint8_t, 6>;
 
-	static_assert(std::is_constructible_v<Q>);
-	static_assert(std::is_nothrow_constructible_v<Q>);
+	static_assert(std::is_constructible_v<T>);
+	static_assert(std::is_nothrow_constructible_v<T>);
 
-	static_assert(std::is_default_constructible_v<Q>);
-	static_assert(std::is_nothrow_default_constructible_v<Q>);
+	static_assert(std::is_default_constructible_v<T>);
+	static_assert(std::is_nothrow_default_constructible_v<T>);
 
-	static_assert(!std::is_copy_constructible_v<Q>);
-	static_assert(!std::is_copy_assignable_v<Q>);
+	static_assert(!std::is_copy_constructible_v<T>);
+	static_assert(!std::is_copy_assignable_v<T>);
 
-	static_assert(!std::is_move_constructible_v<Q>);
-	static_assert(!std::is_nothrow_move_constructible_v<Q>);
+	static_assert(!std::is_move_constructible_v<T>);
+	static_assert(!std::is_nothrow_move_constructible_v<T>);
 
-	static_assert(!std::is_move_assignable_v<Q>);
-	static_assert(!std::is_nothrow_move_assignable_v<Q>);
+	static_assert(!std::is_move_assignable_v<T>);
+	static_assert(!std::is_nothrow_move_assignable_v<T>);
 }
 
 SCENARIO("Queue: initialization")
@@ -49,6 +49,7 @@ SCENARIO("Queue: initialization")
 		THEN("queue is empty")
 		{
 			REQUIRE(dut.empty());
+			REQUIRE_FALSE(dut.full());
 		}
 
 		THEN("pop fails")
@@ -66,15 +67,18 @@ SCENARIO("Queue: push/pop")
 
 		WHEN("pushing a single element")
 		{
+			REQUIRE(dut.empty());
 			REQUIRE(dut.push(1));
 
 			THEN("the element is stored")
 			{
 				REQUIRE(dut.front() == 1);
 			}
-			THEN("queue is not empty")
+
+			THEN("queue is not empty, nor full")
 			{
 				REQUIRE_FALSE(dut.empty());
+				REQUIRE_FALSE(dut.full());
 			}
 		}
 
@@ -82,6 +86,7 @@ SCENARIO("Queue: push/pop")
 		{
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.push(i + 1));
+				REQUIRE_FALSE(dut.empty());
 
 				THEN("the front remains intact")
 				{
@@ -94,14 +99,18 @@ SCENARIO("Queue: push/pop")
 				REQUIRE_FALSE(dut.push(0));
 			}
 
-			THEN("queue is not empty")
+			THEN("queue full and not not empty")
 			{
+				REQUIRE(dut.full());
 				REQUIRE_FALSE(dut.empty());
 			}
 
-			for (std::size_t i = 0; i < dut.capacity(); ++i) {
-				REQUIRE(dut.front() == (i + 1));
-				dut.pop();
+			THEN("queue contains the expected sequence")
+			{
+				for (std::size_t i = 0; i < dut.capacity(); ++i) {
+					REQUIRE(dut.front() == (i + 1));
+					dut.pop();
+				}
 			}
 		}
 	}
@@ -113,6 +122,8 @@ SCENARIO("Queue: push/pop")
 			REQUIRE(dut.push(i + 1));
 		}
 		REQUIRE(dut.front() == 1);
+		REQUIRE(dut.full());
+		REQUIRE_FALSE(dut.empty());
 
 		WHEN("pushing additional data")
 		{
@@ -120,6 +131,7 @@ SCENARIO("Queue: push/pop")
 			{
 				REQUIRE_FALSE(dut.push(99));
 			}
+
 			THEN("the oldest entry is retained")
 			{
 				REQUIRE(dut.front() == 1);
@@ -129,6 +141,8 @@ SCENARIO("Queue: push/pop")
 		WHEN("only after data is popped")
 		{
 			REQUIRE(dut.pop());
+			REQUIRE_FALSE(dut.full());
+			REQUIRE_FALSE(dut.empty());
 
 			THEN("the oldest entry is removed")
 			{
@@ -138,6 +152,7 @@ SCENARIO("Queue: push/pop")
 			THEN("new data can be pushed to the queue")
 			{
 				REQUIRE(dut.push(dut.capacity()));
+				REQUIRE(dut.full());
 				REQUIRE_FALSE(dut.push(dut.capacity() + 1));
 			}
 		}
@@ -145,14 +160,17 @@ SCENARIO("Queue: push/pop")
 		WHEN("pop is called until empty")
 		{
 			REQUIRE_FALSE(dut.push(0));
+			REQUIRE(dut.full());
 
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
+				REQUIRE_FALSE(dut.empty());
 				THEN("front retruns the oldest entry")
 				{
 					REQUIRE(dut.front() == (i + 1));
 				}
 
 				REQUIRE(dut.pop());
+				REQUIRE_FALSE(dut.full());
 			}
 
 			THEN("queue is empty")
@@ -170,7 +188,7 @@ SCENARIO("Queue: emplace")
 	{
 		Queue<std::size_t, 3> dut{};
 
-		WHEN("pushing a single element")
+		WHEN("emplacing a single element")
 		{
 			REQUIRE(dut.emplace(1));
 
@@ -178,9 +196,11 @@ SCENARIO("Queue: emplace")
 			{
 				REQUIRE(dut.front() == 1);
 			}
-			THEN("queue is not empty")
+
+			THEN("queue is not empty, nor full")
 			{
 				REQUIRE_FALSE(dut.empty());
+				REQUIRE_FALSE(dut.full());
 			}
 		}
 
@@ -188,6 +208,7 @@ SCENARIO("Queue: emplace")
 		{
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
 				REQUIRE(dut.emplace(i + 1));
+				REQUIRE_FALSE(dut.empty());
 
 				THEN("the front remains intact")
 				{
@@ -200,14 +221,18 @@ SCENARIO("Queue: emplace")
 				REQUIRE_FALSE(dut.push(0));
 			}
 
-			THEN("queue is not empty")
+			THEN("queue full and not not empty")
 			{
+				REQUIRE(dut.full());
 				REQUIRE_FALSE(dut.empty());
 			}
 
-			for (std::size_t i = 0; i < dut.capacity(); ++i) {
-				REQUIRE(dut.front() == (i + 1));
-				dut.pop();
+			THEN("queue contains the expected sequence")
+			{
+				for (std::size_t i = 0; i < dut.capacity(); ++i) {
+					REQUIRE(dut.front() == (i + 1));
+					dut.pop();
+				}
 			}
 		}
 	}
@@ -219,6 +244,8 @@ SCENARIO("Queue: emplace")
 			REQUIRE(dut.push(i + 1));
 		}
 		REQUIRE(dut.front() == 1);
+		REQUIRE(dut.full());
+		REQUIRE_FALSE(dut.empty());
 
 		WHEN("emplacing additional data")
 		{
@@ -226,6 +253,7 @@ SCENARIO("Queue: emplace")
 			{
 				REQUIRE(dut.emplace(99U) == nullptr);
 			}
+
 			THEN("the oldest entry is overwritten")
 			{
 				REQUIRE(dut.front() == 1);
@@ -235,6 +263,8 @@ SCENARIO("Queue: emplace")
 		WHEN("only after data is popped")
 		{
 			REQUIRE(dut.pop());
+			REQUIRE_FALSE(dut.full());
+			REQUIRE_FALSE(dut.empty());
 
 			THEN("the oldest entry is removed")
 			{
@@ -244,6 +274,7 @@ SCENARIO("Queue: emplace")
 			THEN("new data can be pushed to the queue")
 			{
 				REQUIRE(dut.emplace(dut.capacity()));
+				REQUIRE(dut.full());
 				REQUIRE(dut.emplace(dut.capacity() + 1) == nullptr);
 			}
 		}
@@ -325,11 +356,8 @@ SCENARIO("Queue: store objects")
 			WHEN("calling clear")
 			{
 				dut.clear();
+				REQUIRE(dut.empty());
 
-				THEN("queue is empty")
-				{
-					REQUIRE(dut.empty());
-				}
 				THEN("number of deallocations match the number of allocations")
 				{
 					REQUIRE(allocations == 3);
@@ -442,11 +470,8 @@ SCENARIO("Queue: store objects without default constructors")
 			WHEN("calling clear")
 			{
 				dut.clear();
+				REQUIRE(dut.empty());
 
-				THEN("queue is empty")
-				{
-					REQUIRE(dut.empty());
-				}
 				THEN("number of deallocations match the number of allocations")
 				{
 					REQUIRE(allocations == 2);
