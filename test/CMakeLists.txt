@@ -20,6 +20,7 @@ target_sources(unittests
 		test_queue_spsc.cpp
 		test_byte_reader.cpp
 		test_byte_writer.cpp
+		test_optional.cpp
 )
 
 target_link_libraries(unittests
