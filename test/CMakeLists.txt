@@ -16,6 +16,7 @@ target_sources(unittests
 	PRIVATE
 		test_aligned_storage.cpp
 		test_queue_spsc.cpp
+		test_optional.cpp
 )
 
 target_link_libraries(unittests
