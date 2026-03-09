@@ -29,6 +29,7 @@ target_sources(libecl
 			"include/libecl/containers/queue_spsc.hpp"
 			"include/libecl/utilities/byte_reader.hpp"
 			"include/libecl/utilities/byte_writer.hpp"
+			"include/libecl/types/maybe.hpp"
 	PRIVATE
 		"src/communication/i2c/bus_scheduler.cpp"
 		"src/communication/i2c/channel.cpp"
