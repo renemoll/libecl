@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include "libecl/utilities/optional.hpp"
+#include "libecl/types/maybe.hpp"
 
 // #include <cstdint>
 // #include <type_traits>
@@ -289,7 +289,7 @@ static_assert(!std::is_move_constructible_v<NoCopyNoMove>);
 static_assert(!std::is_move_assignable_v<NoCopyNoMove>);
 }  // namespace
 
-SCENARIO("Optional: type traits")
+SCENARIO("Maybe: type traits")
 {
 	// TODO: depends on T...
 	// using T = Queue<uint8_t, 6>;
@@ -310,19 +310,19 @@ SCENARIO("Optional: type traits")
 	// static_assert(!std::is_nothrow_move_assignable_v<T>);
 }
 
-SCENARIO("Optional: Constructors")
+SCENARIO("Maybe: Constructors")
 {
 	WHEN("using the default constructor")
 	{
-		Optional<int> dut{};
-		Optional<Implicit> dut_implicit{};
-		Optional<Explicit> dut_explicit{};
-		Optional<NoDefault> dut_no_default{};
-		Optional<CopyOnly> dut_copy_only{};
-		Optional<MoveOnly> dut_move_only{};
-		Optional<NoCopyNoMove> dut_no_copy_move{};
+		Maybe<int> dut{};
+		Maybe<Implicit> dut_implicit{};
+		Maybe<Explicit> dut_explicit{};
+		Maybe<NoDefault> dut_no_default{};
+		Maybe<CopyOnly> dut_copy_only{};
+		Maybe<MoveOnly> dut_move_only{};
+		Maybe<NoCopyNoMove> dut_no_copy_move{};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
 			CHECK_FALSE(dut.has_value());
 			CHECK_FALSE(dut_implicit.has_value());
@@ -334,17 +334,17 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("explicitly constructing an empty Optional")
+	WHEN("explicitly constructing an empty Maybe")
 	{
-		Optional<int> dut{std::nullopt};
-		Optional<Implicit> dut_implicit{std::nullopt};
-		Optional<Explicit> dut_explicit{std::nullopt};
-		Optional<NoDefault> dut_no_default{std::nullopt};
-		Optional<CopyOnly> dut_copy_only{std::nullopt};
-		Optional<MoveOnly> dut_move_only{std::nullopt};
-		Optional<NoCopyNoMove> dut_no_copy_move{std::nullopt};
+		Maybe<int> dut{std::nullopt};
+		Maybe<Implicit> dut_implicit{std::nullopt};
+		Maybe<Explicit> dut_explicit{std::nullopt};
+		Maybe<NoDefault> dut_no_default{std::nullopt};
+		Maybe<CopyOnly> dut_copy_only{std::nullopt};
+		Maybe<MoveOnly> dut_move_only{std::nullopt};
+		Maybe<NoCopyNoMove> dut_no_copy_move{std::nullopt};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
 			CHECK_FALSE(dut.has_value());
 			CHECK_FALSE(dut_implicit.has_value());
@@ -358,11 +358,11 @@ SCENARIO("Optional: Constructors")
 
 	WHEN("construction from an value")
 	{
-		Optional<int> dut(102);
-		Optional<Implicit> dut_implicit(101);
-		Optional<Explicit> dut_explicit(100);
+		Maybe<int> dut(102);
+		Maybe<Implicit> dut_implicit(101);
+		Maybe<Explicit> dut_explicit(100);
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut.match([](int val) { CHECK(val == 102); }, [](std::nullopt_t) { CHECK(false); });
 			dut_implicit.match(
@@ -380,16 +380,16 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("copy constructing from an empty Optional")
+	WHEN("copy constructing from an empty Maybe")
 	{
-		Optional<int> dut_empty{std::nullopt};
-		Optional<int> dut_copy{dut_empty};
-		Optional<Implicit> dut_implicit_empty{std::nullopt};
-		Optional<Implicit> dut_implicit_copy{dut_implicit_empty};
-		Optional<Explicit> dut_explicit_empty{std::nullopt};
-		Optional<Explicit> dut_explicit_copy{dut_explicit_empty};
+		Maybe<int> dut_empty{std::nullopt};
+		Maybe<int> dut_copy{dut_empty};
+		Maybe<Implicit> dut_implicit_empty{std::nullopt};
+		Maybe<Implicit> dut_implicit_copy{dut_implicit_empty};
+		Maybe<Explicit> dut_explicit_empty{std::nullopt};
+		Maybe<Explicit> dut_explicit_copy{dut_explicit_empty};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
 			CHECK_FALSE(dut_copy.has_value());
 			CHECK_FALSE(dut_implicit_copy.has_value());
@@ -397,16 +397,16 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("copy constructing from an non-empty Optional")
+	WHEN("copy constructing from an non-empty Maybe")
 	{
-		Optional<int> dut_value{42};
-		Optional<int> dut_copy{dut_value};
-		Optional<Implicit> dut_implicit_value{64};
-		Optional<Implicit> dut_implicit_copy{dut_implicit_value};
-		Optional<Explicit> dut_explicit_value{Explicit{53}};
-		Optional<Explicit> dut_explicit_copy{dut_explicit_value};
+		Maybe<int> dut_value{42};
+		Maybe<int> dut_copy{dut_value};
+		Maybe<Implicit> dut_implicit_value{64};
+		Maybe<Implicit> dut_implicit_copy{dut_implicit_value};
+		Maybe<Explicit> dut_explicit_value{Explicit{53}};
+		Maybe<Explicit> dut_explicit_copy{dut_explicit_value};
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut_value.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
 			dut_copy.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
@@ -440,13 +440,13 @@ SCENARIO("Optional: Constructors")
 	WHEN("copy constructing from a value")
 	{
 		const int value = 33;
-		Optional<int> dut{value};
+		Maybe<int> dut{value};
 		Implicit implicit_value{44};
-		Optional<Implicit> dut_implicit(implicit_value);
+		Maybe<Implicit> dut_implicit(implicit_value);
 		Explicit explicit_value{66};
-		Optional<Explicit> dut_explicit(explicit_value);
+		Maybe<Explicit> dut_explicit(explicit_value);
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut.match([](int val) { CHECK(val == 33); }, [](std::nullopt_t) { CHECK(false); });
 			dut_implicit.match(
@@ -464,16 +464,16 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("move constructing from an empty Optional")
+	WHEN("move constructing from an empty Maybe")
 	{
-		Optional<int> dut_empty{std::nullopt};
-		Optional<int> dut{std::move(dut_empty)};
-		Optional<Implicit> dut_implicit_empty{std::nullopt};
-		Optional<Implicit> dut_implicit{std::move(dut_implicit_empty)};
-		Optional<Explicit> dut_explicit_empty{std::nullopt};
-		Optional<Explicit> dut_explicit{std::move(dut_explicit_empty)};
+		Maybe<int> dut_empty{std::nullopt};
+		Maybe<int> dut{std::move(dut_empty)};
+		Maybe<Implicit> dut_implicit_empty{std::nullopt};
+		Maybe<Implicit> dut_implicit{std::move(dut_implicit_empty)};
+		Maybe<Explicit> dut_explicit_empty{std::nullopt};
+		Maybe<Explicit> dut_explicit{std::move(dut_explicit_empty)};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
 			CHECK_FALSE(dut_empty.has_value());
 			CHECK_FALSE(dut.has_value());
@@ -484,16 +484,16 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("move constructing an non-empty Optional")
+	WHEN("move constructing an non-empty Maybe")
 	{
-		Optional<int> dut_value{42};
-		Optional<int> dut{std::move(dut_value)};
-		Optional<Implicit> dut_implicit_value{64};
-		Optional<Implicit> dut_implicit{std::move(dut_implicit_value)};
-		Optional<Explicit> dut_explicit_value{Explicit{53}};
-		Optional<Explicit> dut_explicit{std::move(dut_explicit_value)};
+		Maybe<int> dut_value{42};
+		Maybe<int> dut{std::move(dut_value)};
+		Maybe<Implicit> dut_implicit_value{64};
+		Maybe<Implicit> dut_implicit{std::move(dut_implicit_value)};
+		Maybe<Explicit> dut_explicit_value{Explicit{53}};
+		Maybe<Explicit> dut_explicit{std::move(dut_explicit_value)};
 
-		THEN("the Optionals contain the value, the sources are empty")
+		THEN("the Maybes contain the value, the sources are empty")
 		{
 			CHECK(dut_value.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
 			dut.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
@@ -517,11 +517,11 @@ SCENARIO("Optional: Constructors")
 	WHEN("move constructing from a value")
 	{
 		Implicit implicit_value{44};
-		Optional<Implicit> dut_implicit(std::move(implicit_value));
+		Maybe<Implicit> dut_implicit(std::move(implicit_value));
 		Explicit explicit_value{66};
-		Optional<Explicit> dut_explicit(std::move(explicit_value));
+		Maybe<Explicit> dut_explicit(std::move(explicit_value));
 
-		THEN("the Optionals contain the value, the source is empty")
+		THEN("the Maybes contain the value, the source is empty")
 		{
 			CHECK(implicit_value.m_method == Method::MovedFrom);
 			dut_implicit.match(
@@ -540,27 +540,27 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("converting copy construction from an empty-Optional")
+	WHEN("converting copy construction from an empty-Maybe")
 	{
-		Optional<int> empty_optional{std::nullopt};
-		Optional<Implicit> dut_implicit{empty_optional};
-		Optional<Explicit> dut_explicit{empty_optional};
+		Maybe<int> empty_Maybe{std::nullopt};
+		Maybe<Implicit> dut_implicit{empty_Maybe};
+		Maybe<Explicit> dut_explicit{empty_Maybe};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
-			CHECK_FALSE(empty_optional.has_value());
+			CHECK_FALSE(empty_Maybe.has_value());
 			CHECK_FALSE(dut_implicit.has_value());
 			CHECK_FALSE(dut_explicit.has_value());
 		}
 	}
 
-	WHEN("converting copy construction from an non-empty-Optional")
+	WHEN("converting copy construction from an non-empty-Maybe")
 	{
-		Optional<int> dut_value{42};
-		Optional<Implicit> dut_implicit{dut_value};
-		Optional<Explicit> dut_explicit{dut_value};
+		Maybe<int> dut_value{42};
+		Maybe<Implicit> dut_implicit{dut_value};
+		Maybe<Explicit> dut_explicit{dut_value};
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			CHECK(dut_value.match([](int val) { return val == 42; }, [](std::nullopt_t) { return false; }));
 			dut_implicit.match(
@@ -581,11 +581,11 @@ SCENARIO("Optional: Constructors")
 	WHEN("converting copy constructing from a value")
 	{
 		const char forty_two = '*';
-		Optional<int> dut{forty_two};
-		Optional<Implicit> dut_implicit(forty_two);
-		Optional<Explicit> dut_explicit(forty_two);
+		Maybe<int> dut{forty_two};
+		Maybe<Implicit> dut_implicit(forty_two);
+		Maybe<Explicit> dut_explicit(forty_two);
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
 			dut_implicit.match(
@@ -603,14 +603,14 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("converting move constructing from an empty Optional")
+	WHEN("converting move constructing from an empty Maybe")
 	{
-		Optional<int> dut_implicit_empty{std::nullopt};
-		Optional<Implicit> dut_implicit{std::move(dut_implicit_empty)};
-		Optional<int> dut_explicit_empty{std::nullopt};
-		Optional<Explicit> dut_explicit{std::move(dut_explicit_empty)};
+		Maybe<int> dut_implicit_empty{std::nullopt};
+		Maybe<Implicit> dut_implicit{std::move(dut_implicit_empty)};
+		Maybe<int> dut_explicit_empty{std::nullopt};
+		Maybe<Explicit> dut_explicit{std::move(dut_explicit_empty)};
 
-		THEN("the Optionals are empty")
+		THEN("the Maybes are empty")
 		{
 			CHECK_FALSE(dut_implicit_empty.has_value());
 			CHECK_FALSE(dut_implicit.has_value());
@@ -619,19 +619,19 @@ SCENARIO("Optional: Constructors")
 		}
 	}
 
-	WHEN("converting move constructing an non-empty Optional")
+	WHEN("converting move constructing an non-empty Maybe")
 	{
-		Optional<int> dut_implicit_value{33};
-		Optional<Implicit> dut_implicit1{std::move(dut_implicit_value)};
-		Optional<int> dut_explicit_value{42};
-		Optional<Explicit> dut_explicit1{std::move(dut_explicit_value)};
+		Maybe<int> dut_implicit_value{33};
+		Maybe<Implicit> dut_implicit1{std::move(dut_implicit_value)};
+		Maybe<int> dut_explicit_value{42};
+		Maybe<Explicit> dut_explicit1{std::move(dut_explicit_value)};
 
 		const int implicit_value = 34;
-		Optional<Implicit> dut_implicit2{std::move(implicit_value)};
+		Maybe<Implicit> dut_implicit2{std::move(implicit_value)};
 		const int explicit_value = 43;
-		Optional<Explicit> dut_explicit2{std::move(explicit_value)};
+		Maybe<Explicit> dut_explicit2{std::move(explicit_value)};
 
-		THEN("the Optionals contain the value, the sources are empty")
+		THEN("the Maybes contain the value, the sources are empty")
 		{
 			CHECK(dut_implicit_value.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
 			dut_implicit1.match(
@@ -665,11 +665,11 @@ SCENARIO("Optional: Constructors")
 	WHEN("converting move constructing from a value")
 	{
 		Implicit implicit_value{44};
-		Optional<Implicit> dut_implicit(std::move(implicit_value));
+		Maybe<Implicit> dut_implicit(std::move(implicit_value));
 		Explicit explicit_value{66};
-		Optional<Explicit> dut_explicit(std::move(explicit_value));
+		Maybe<Explicit> dut_explicit(std::move(explicit_value));
 
-		THEN("the Optionals contain the value, the source is empty")
+		THEN("the Maybes contain the value, the source is empty")
 		{
 			CHECK(implicit_value.m_method == Method::MovedFrom);
 			dut_implicit.match(
@@ -691,13 +691,13 @@ SCENARIO("Optional: Constructors")
 	WHEN("in-place construction")
 	{
 		using pair_t = std::pair<char, int>;
-		Optional<pair_t> dut1(std::in_place, '4', 2);
+		Maybe<pair_t> dut1(std::in_place, '4', 2);
 
 		const char value = '4';
 		const int number = 2;
-		Optional<const pair_t> dut2(std::in_place, value, number);
+		Maybe<const pair_t> dut2(std::in_place, value, number);
 
-		THEN("the Optional contains the value")
+		THEN("the Maybe contains the value")
 		{
 			dut1.match(
 				[](pair_t& pair) {
@@ -717,9 +717,9 @@ SCENARIO("Optional: Constructors")
 	WHEN("in-place construction with initializer list")
 	{
 		using vec_t = std::vector<int>;
-		Optional<vec_t> dut(std::in_place, {1, 2, 3, 4, 5});
+		Maybe<vec_t> dut(std::in_place, {1, 2, 3, 4, 5});
 
-		THEN("the Optional contains the value")
+		THEN("the Maybe contains the value")
 		{
 			dut.match(
 				[](vec_t& vec) {
@@ -735,19 +735,19 @@ SCENARIO("Optional: Constructors")
 	}
 }
 
-SCENARIO("Optional: Assignment")
+SCENARIO("Maybe: Assignment")
 {
 	GIVEN("nullopt assignment")
 	{
-		Optional<int> dut_empty;
-		Optional<int> dut_value(42);
+		Maybe<int> dut_empty;
+		Maybe<int> dut_value(42);
 
 		WHEN("assigning nullopt")
 		{
 			dut_empty = std::nullopt;
 			dut_value = std::nullopt;
 
-			THEN("the Optionals are empty")
+			THEN("the Maybes are empty")
 			{
 				CHECK_FALSE(dut_empty.has_value());
 				CHECK_FALSE(dut_value.has_value());
@@ -755,18 +755,18 @@ SCENARIO("Optional: Assignment")
 		}
 	}
 
-	GIVEN("copy assignment from another optional")
+	GIVEN("copy assignment from another Maybe")
 	{
-		Optional<Implicit> dut_empty_lhs;
-		Optional<Implicit> dut_empty_rhs;
-		Optional<Implicit> dut_value_lhs(42);
-		Optional<Implicit> dut_value_rhs(33);
+		Maybe<Implicit> dut_empty_lhs;
+		Maybe<Implicit> dut_empty_rhs;
+		Maybe<Implicit> dut_value_lhs(42);
+		Maybe<Implicit> dut_value_rhs(33);
 
 		WHEN("lhs has a value, rhs has a value")
 		{
 			dut_value_lhs = dut_value_rhs;
 
-			THEN("the Optionals hold the same value")
+			THEN("the Maybes hold the same value")
 			{
 				dut_value_lhs.match(
 					[](Implicit& wrap) {
@@ -787,7 +787,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_value_lhs = dut_empty_rhs;
 
-			THEN("the Optionals are empty")
+			THEN("the Maybes are empty")
 			{
 				CHECK_FALSE(dut_value_lhs.has_value());
 				CHECK_FALSE(dut_empty_rhs.has_value());
@@ -798,7 +798,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_empty_lhs = dut_value_rhs;
 
-			THEN("the Optionals hold the same value")
+			THEN("the Maybes hold the same value")
 			{
 				dut_empty_lhs.match(
 					[](Implicit& wrap) {
@@ -819,7 +819,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_empty_lhs = dut_empty_rhs;
 
-			THEN("the Optionals are empty")
+			THEN("the Maybes are empty")
 			{
 				CHECK_FALSE(dut_empty_lhs.has_value());
 				CHECK_FALSE(dut_empty_rhs.has_value());
@@ -829,32 +829,32 @@ SCENARIO("Optional: Assignment")
 
 	GIVEN("copy assignment from a value")
 	{
-		Optional<int> dut1;
-		Optional<int> dut2;
+		Maybe<int> dut1;
+		Maybe<int> dut2;
 
 		dut1 = 42;
 		const int value = 101;
 		dut2 = value;
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut1.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
 			dut2.match([](int val) { CHECK(val == 101); }, [](std::nullopt_t) { CHECK(false); });
 		}
 	}
 
-	GIVEN("move assignment from another optional")
+	GIVEN("move assignment from another Maybe")
 	{
-		Optional<Implicit> dut_empty_lhs;
-		Optional<Implicit> dut_empty_rhs;
-		Optional<Implicit> dut_value_lhs(42);
-		Optional<Implicit> dut_value_rhs(33);
+		Maybe<Implicit> dut_empty_lhs;
+		Maybe<Implicit> dut_empty_rhs;
+		Maybe<Implicit> dut_value_lhs(42);
+		Maybe<Implicit> dut_value_rhs(33);
 
 		WHEN("lhs has a value, rhs has a value")
 		{
 			dut_value_lhs = std::move(dut_value_rhs);
 
-			THEN("the Optionals hold the same value")
+			THEN("the Maybes hold the same value")
 			{
 				dut_value_lhs.match(
 					[](Implicit& wrap) {
@@ -870,7 +870,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_value_lhs = std::move(dut_empty_rhs);
 
-			THEN("the Optionals are empty")
+			THEN("the Maybes are empty")
 			{
 				CHECK_FALSE(dut_value_lhs.has_value());
 				CHECK_FALSE(dut_empty_rhs.has_value());
@@ -881,7 +881,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_empty_lhs = std::move(dut_value_rhs);
 
-			THEN("the Optionals hold the same value")
+			THEN("the Maybes hold the same value")
 			{
 				dut_empty_lhs.match(
 					[](Implicit& wrap) {
@@ -897,7 +897,7 @@ SCENARIO("Optional: Assignment")
 		{
 			dut_empty_lhs = std::move(dut_empty_rhs);
 
-			THEN("the Optionals are empty")
+			THEN("the Maybes are empty")
 			{
 				CHECK_FALSE(dut_empty_lhs.has_value());
 				CHECK_FALSE(dut_empty_rhs.has_value());
@@ -908,9 +908,9 @@ SCENARIO("Optional: Assignment")
 	GIVEN("move assignment from a value")
 	{
 		Implicit value = 101;
-		Optional<Implicit> dut = std::move(value);
+		Maybe<Implicit> dut = std::move(value);
 
-		THEN("the Optionals contains the value")
+		THEN("the Maybes contains the value")
 		{
 			dut.match(
 				[](Implicit& wrap) {
@@ -932,16 +932,16 @@ SCENARIO("Optional: Assignment")
 	}
 }
 
-SCENARIO("Optional: swap")
+SCENARIO("Maybe: swap")
 {
 	CHECK(false);
 }
 
-SCENARIO("Optional: observe")
+SCENARIO("Maybe: observe")
 {
-	GIVEN("an empty Optional")
+	GIVEN("an empty Maybe")
 	{
-		Optional<int> dut;
+		Maybe<int> dut;
 
 		WHEN("calling match")
 		{
@@ -960,9 +960,9 @@ SCENARIO("Optional: observe")
 		}
 	}
 
-	GIVEN("an Optional with a value")
+	GIVEN("an Maybe with a value")
 	{
-		Optional<int> dut = 44;
+		Maybe<int> dut = 44;
 
 		WHEN("calling match")
 		{
@@ -982,16 +982,16 @@ SCENARIO("Optional: observe")
 	}
 }
 
-SCENARIO("Optional: modifiers")
+SCENARIO("Maybe: modifiers")
 {
 	CHECK(false);
 }
 
-SCENARIO("Optional: invalid types")
+SCENARIO("Maybe: invalid types")
 {
-	// Optional<std::in_place_t> dut1{};
-	// Optional<void> dut2{};
-	// Optional<std::nullopt_t> dut3{};
+	// Maybe<std::in_place_t> dut1{};
+	// Maybe<void> dut2{};
+	// Maybe<std::nullopt_t> dut3{};
 }
 
 //!\todo has_value / operator bool

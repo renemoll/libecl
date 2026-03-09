@@ -21,6 +21,7 @@ target_sources(libecl
 		FILES
 			"include/libecl/containers/aligned_storage.hpp"
 			"include/libecl/containers/queue_spsc.hpp"
+			"include/libecl/types/maybe.hpp"
 )
 set_target_properties(libecl
 	PROPERTIES
