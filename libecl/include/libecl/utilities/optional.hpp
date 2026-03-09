@@ -7,9 +7,10 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#ifndef LIBECL_UTILITIES_BYTE_READER_H
-#define LIBECL_UTILITIES_BYTE_READER_H
+#ifndef LIBECL_UTILITIES_OPTIONAL_H
+#define LIBECL_UTILITIES_OPTIONAL_H
 
+#include <cassert>
 #include <optional>
 #include <type_traits>
 #include <variant>
@@ -51,6 +52,7 @@ constexpr bool converts_from_any_cvref = std::disjunction_v<std::is_constructibl
  * the match function with handlers for both cases: when a value is present and when there is none.
  *
  * \todo bring helpers/tags into the namespace?
+ * \todo implement transform, and_then, or_else
  */
 template <typename T>
 class Optional
@@ -232,9 +234,10 @@ public:
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
-				m_storage = std::move(rhs);
+				m_storage = std::move(rhs.m_storage);
 			} else {
-				m_storage = T(std::move(rhs));
+				assert(std::get_if<U>(&rhs.m_storage));
+				m_storage = T(std::get<U>(std::move(rhs.m_storage)));
 			}
 		} else {
 			reset();
