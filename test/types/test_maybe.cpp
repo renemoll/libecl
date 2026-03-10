@@ -310,7 +310,7 @@ SCENARIO("Maybe: type traits")
 	// static_assert(!std::is_nothrow_move_assignable_v<T>);
 }
 
-SCENARIO("Maybe: Constructors")
+SCENARIO("Maybe: constructors")
 {
 	WHEN("using the default constructor")
 	{
@@ -735,7 +735,7 @@ SCENARIO("Maybe: Constructors")
 	}
 }
 
-SCENARIO("Maybe: Assignment")
+SCENARIO("Maybe: assignments")
 {
 	GIVEN("nullopt assignment")
 	{
@@ -920,28 +920,120 @@ SCENARIO("Maybe: Assignment")
 				[](std::nullopt_t) { CHECK(false); });
 		}
 	}
-
-	GIVEN("emplace")
-	{
-		CHECK(false);
-	}
-
-	GIVEN("emplace")
-	{
-		CHECK(false);
-	}
 }
 
-SCENARIO("Maybe: swap")
+SCENARIO("Maybe: modifiers")
 {
-	CHECK(false);
+	GIVEN("an empty Maybe")
+	{
+		Maybe<NoCopyNoMove> dut;
+
+		WHEN("calling reset")
+		{
+			dut.reset();
+
+			THEN("the Maybe is empty")
+			{
+				CHECK_FALSE(dut.has_value());
+			}
+		}
+
+		WHEN("calling emplace")
+		{
+			const auto& result = dut.emplace(11);
+
+			THEN("the Maybe holds the value")
+			{
+				CHECK(dut.has_value());
+				CHECK(dut.match([](NoCopyNoMove& value) { return value.m_value == 11; },
+								[](std::nullopt_t) { return false; }));
+				CHECK(result.m_value == 11);
+			}
+		}
+
+		WHEN("calling swap")
+		{
+			Maybe<Implicit> dut_a;
+			Maybe<Implicit> dut_b = 2;
+			dut_a.swap(dut_b);
+
+			THEN("the values are swapped")
+			{
+				CHECK(dut_a.match(
+					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::ValueConstructed; },
+					[](std::nullopt_t) { return false; }));
+				CHECK(dut_b.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
+			}
+		}
+	}
+
+	GIVEN("an Maybe with a value")
+	{
+		Maybe<NoCopyNoMove> dut = 42;
+
+		WHEN("calling reset")
+		{
+			dut.reset();
+
+			THEN("the Maybe is empty")
+			{
+				CHECK_FALSE(dut.has_value());
+			}
+		}
+
+		WHEN("calling emplace")
+		{
+			const auto& result = dut.emplace(11);
+
+			THEN("the Maybe holds the value")
+			{
+				CHECK(dut.has_value());
+				CHECK(dut.match([](NoCopyNoMove& value) { return value.m_value == 11; },
+								[](std::nullopt_t) { return false; }));
+				CHECK(result.m_value == 11);
+			}
+		}
+
+		WHEN("calling swap")
+		{
+			Maybe<Implicit> dut_a = 4;
+			Maybe<Implicit> dut_b = 2;
+			dut_a.swap(dut_b);
+
+			THEN("the values are swapped")
+			{
+				CHECK(dut_a.match(
+					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::MoveAssigned; },
+					[](std::nullopt_t) { return false; }));
+				CHECK(dut_b.match(
+					[](Implicit& wrap) { return wrap.m_value == 4 && wrap.m_method == Method::MoveAssigned; },
+					[](std::nullopt_t) { return false; }));
+			}
+		}
+	}
 }
 
-SCENARIO("Maybe: observe")
+SCENARIO("Maybe: observers")
 {
 	GIVEN("an empty Maybe")
 	{
 		Maybe<int> dut;
+
+		WHEN("converting to boolean")
+		{
+			THEN("returns false")
+			{
+				CHECK_FALSE(dut);
+			}
+		}
+
+		WHEN("calling has_value")
+		{
+			THEN("returns false")
+			{
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
 		WHEN("calling match")
 		{
@@ -964,11 +1056,27 @@ SCENARIO("Maybe: observe")
 	{
 		Maybe<int> dut = 44;
 
+		WHEN("converting to boolean")
+		{
+			THEN("returns true")
+			{
+				CHECK(dut);
+			}
+		}
+
+		WHEN("calling has_value")
+		{
+			THEN("returns true")
+			{
+				CHECK(dut.has_value());
+			}
+		}
+
 		WHEN("calling match")
 		{
 			THEN("the value can be retrieved")
 			{
-				CHECK(dut.match([](int value) { return value == 44; }, [](std::nullopt_t) { return true; }));
+				CHECK(dut.match([](int value) { return value == 44; }, [](std::nullopt_t) { return false; }));
 			}
 		}
 
@@ -982,9 +1090,60 @@ SCENARIO("Maybe: observe")
 	}
 }
 
-SCENARIO("Maybe: modifiers")
+SCENARIO("Maybe: monadic operations")
 {
-	CHECK(false);
+	GIVEN("an Maybe with a value")
+	{
+		Maybe<int> dut = 11;
+
+		WHEN("calling and_then")
+		{
+			auto int_to_maybe_string = [](int value) { return Maybe<std::string>(std::to_string(value)); };
+			auto result = dut.and_then(int_to_maybe_string);
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](std::string& str) { return str == "11"; }, [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("calling transform")
+		{
+			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto result = dut.transform(int_to_string);
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](std::string& str) { return str == "11"; }, [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("calling or_else")
+		{
+			auto fallback = []() { return Maybe<int>(0); };
+			auto result = dut.or_else(fallback);
+			THEN("the result is the original Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+
+			dut.reset();
+			result = dut.or_else(fallback);
+			THEN("the result is the fallback Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
+				CHECK_FALSE(dut.has_value());
+			}
+		}
+	}
 }
 
 SCENARIO("Maybe: invalid types")
@@ -993,6 +1152,3 @@ SCENARIO("Maybe: invalid types")
 	// Maybe<void> dut2{};
 	// Maybe<std::nullopt_t> dut3{};
 }
-
-//!\todo has_value / operator bool
-//!\todo reset?

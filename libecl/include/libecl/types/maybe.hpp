@@ -11,8 +11,11 @@
 #define LIBECL_TYPES_MAYBE_HPP
 
 #include <cassert>
+#include <functional>
 #include <optional>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace libecl {
@@ -252,9 +255,9 @@ public:
 			if (has_value()) {
 				m_storage = std::move(rhs.m_storage);
 			} else {
-				assert(std::get_if<U>(&rhs.m_storage));
 				m_storage = T(std::get<U>(std::move(rhs.m_storage)));
 			}
+			rhs.reset();
 		} else {
 			reset();
 		}
@@ -268,12 +271,12 @@ public:
 		requires(!std::is_same_v<std::remove_cvref_t<U>, Maybe> &&
 				 !std::conjunction_v<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>> &&
 				 std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>)
-	constexpr Maybe<T>& operator=(U&& v)
+	constexpr Maybe<T>& operator=(U&& rhs)
 	{
 		if (has_value()) {
-			m_storage = std::forward<U>(v);
+			m_storage = std::forward<U>(rhs);
 		} else {
-			m_storage = T(std::forward<U>(v));
+			m_storage = T(std::forward<U>(rhs));
 		}
 		return *this;
 	}
@@ -303,6 +306,7 @@ public:
 	constexpr Maybe<T>& operator=(Maybe<U>&& rhs)
 	{
 		*this = Maybe(std::move(rhs));
+		rhs.reset();
 		return *this;
 	}
 
@@ -313,8 +317,10 @@ public:
 		requires(std::is_constructible_v<T, Args...>)
 	constexpr T& emplace(Args&&... args)
 	{
+		// Note: using placement new here to be able to support non-movable types.
 		reset();
-		m_storage = T(std::forward<Args>(args)...);
+		std::construct_at(&std::get<T>(m_storage), std::forward<Args>(args)...);
+		return std::get<T>(m_storage);
 	}
 
 	/*!
@@ -324,8 +330,10 @@ public:
 		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args...>)
 	constexpr T& emplace(std::initializer_list<U> il, Args&&... args)
 	{
+		// Note: using placement new here to be able to support non-movable types.
 		reset();
-		m_storage = T(il, std::forward<Args>(args)...);
+		std::construct_at(&std::get<T>(m_storage), il, std::forward<Args>(args)...);
+		return std::get<T>(m_storage);
 	}
 
 	template <typename U = T>
@@ -334,13 +342,13 @@ public:
 	{
 		if (has_value()) {
 			if (rhs.has_value()) {
-				swap(*this, rhs);
+				std::swap(std::get<T>(m_storage), std::get<T>(rhs.m_storage));
 			} else {
-				rhs.m_storage = T(std::move(m_storage));
+				std::construct_at(&std::get<T>(rhs.m_storage), std::move(std::get<T>(m_storage)));
 				reset();
 			}
 		} else if (rhs.has_value()) {
-			m_storage = T(std::move(rhs.m_storage));
+			std::construct_at(&std::get<T>(m_storage), std::move(std::get<T>(rhs.m_storage)));
 			rhs.reset();
 		}
 	}
@@ -407,6 +415,106 @@ public:
 		m_storage = std::nullopt;
 	}
 
+	template <class F>
+	constexpr auto and_then(F&& func) &
+	{
+		using U = std::remove_cvref_t<std::invoke_result_t<F, T&>>;
+		if (has_value()) {
+			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+		}
+		return U();
+	}
+
+	template <class F>
+	constexpr auto and_then(F&& func) const&
+	{
+		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&>>;
+		if (has_value()) {
+			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+		}
+		return U();
+	}
+
+	template <class F>
+	constexpr auto and_then(F&& func) &&
+	{
+		using U = std::remove_cvref_t<std::invoke_result_t<F, T>>;
+		if (has_value()) {
+			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+		}
+		return U();
+	}
+
+	template <class F>
+	constexpr auto and_then(F&& func) const&&
+	{
+		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&&>>;
+		if (has_value()) {
+			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+		}
+		return U();
+	}
+
+	template <class F>
+	constexpr auto transform(F&& func) &
+	{
+		using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+		if (has_value()) {
+			return Maybe<U>(std::invoke(std::forward<F>(func), std::get<T>(m_storage)));
+		}
+		return Maybe<U>();
+	}
+
+	template <class F>
+	constexpr auto transform(F&& func) const&
+	{
+		using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+		if (has_value()) {
+			return Maybe<U>(std::invoke(std::forward<F>(func), std::get<T>(m_storage)));
+		}
+		return Maybe<U>();
+	}
+
+	template <class F>
+	constexpr auto transform(F&& func) &&
+	{
+		using U = std::remove_cv_t<std::invoke_result_t<F, T>>;
+		if (has_value()) {
+			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
+		}
+		return Maybe<U>();
+	}
+
+	template <class F>
+	constexpr auto transform(F&& func) const&&
+	{
+		using U = std::remove_cv_t<std::invoke_result_t<F, T>>;
+		if (has_value()) {
+			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
+		}
+		return Maybe<U>();
+	}
+
+	template <class F>
+		requires(std::is_copy_constructible_v<T> && std::is_invocable_v<F>)
+	constexpr Maybe or_else(F&& func) const&
+	{
+		if (has_value()) {
+			return *this;
+		}
+		return std::forward<F>(func)();
+	}
+
+	template <class F>
+		requires(std::is_move_constructible_v<T> && std::is_invocable_v<F>)
+	constexpr Maybe or_else(F&& func) &&
+	{
+		if (has_value()) {
+			return std::move(*this);
+		}
+		return std::forward<F>(func)();
+	}
+
 private:
 	std::variant<T, std::nullopt_t> m_storage = std::nullopt;
 };
@@ -464,14 +572,16 @@ template <class T, class U>
 }
 
 template <class T>
-[[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, std::nullopt_t) noexcept
+[[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
 {
+	std::ignore = rhs;
 	return !lhs.has_value();
 }
 
 template <class T>
-[[nodiscard]] constexpr std::strong_ordering operator<=>(const Maybe<T>& lhs, std::nullopt_t) noexcept
+[[nodiscard]] constexpr std::strong_ordering operator<=>(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
 {
+	std::ignore = rhs;
 	return lhs.has_value() <=> false;
 }
 
