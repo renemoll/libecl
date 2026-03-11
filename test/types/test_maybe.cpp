@@ -56,7 +56,7 @@ public:
 		return *this;
 	}
 
-	Implicit(Implicit&& rhs)
+	Implicit(Implicit&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 	{
@@ -112,7 +112,7 @@ public:
 		return *this;
 	}
 
-	Explicit(Explicit&& rhs)
+	Explicit(Explicit&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 	{
@@ -156,7 +156,7 @@ public:
 		return *this;
 	}
 
-	NoDefault(NoDefault&& rhs)
+	NoDefault(NoDefault&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 	{
@@ -203,13 +203,14 @@ public:
 		return *this;
 	}
 
+	CopyOnly(CopyOnly&& rhs) = delete;
+	CopyOnly& operator=(CopyOnly&& rhs) = delete;
+
 	int m_value;
 	Method m_method;
 
 private:
 	CopyOnly() = default;
-	CopyOnly(CopyOnly&& rhs) = delete;
-	CopyOnly& operator=(CopyOnly&& rhs) = delete;
 };
 
 static_assert(!std::is_trivially_constructible_v<CopyOnly>);
@@ -224,7 +225,10 @@ static_assert(!std::is_move_assignable_v<CopyOnly>);
 class MoveOnly
 {
 public:
-	MoveOnly(MoveOnly&& rhs)
+	MoveOnly(MoveOnly const& rhs) = delete;
+	MoveOnly& operator=(MoveOnly const& rhs) = delete;
+
+	MoveOnly(MoveOnly&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 	{
@@ -244,8 +248,6 @@ public:
 
 private:
 	MoveOnly() = default;
-	MoveOnly(MoveOnly const& rhs) = delete;
-	MoveOnly& operator=(MoveOnly const& rhs) = delete;
 };
 
 static_assert(!std::is_trivially_constructible_v<MoveOnly>);
@@ -266,6 +268,11 @@ public:
 	{
 	}
 
+	NoCopyNoMove(NoCopyNoMove const& rhs) = delete;
+	NoCopyNoMove& operator=(NoCopyNoMove const& rhs) = delete;
+	NoCopyNoMove(NoCopyNoMove&& rhs) = delete;
+	NoCopyNoMove& operator=(NoCopyNoMove&& rhs) = delete;
+
 	virtual void foo() {}
 
 	int m_value;
@@ -273,10 +280,6 @@ public:
 
 private:
 	NoCopyNoMove() = default;
-	NoCopyNoMove(NoCopyNoMove const& rhs) = delete;
-	NoCopyNoMove& operator=(NoCopyNoMove const& rhs) = delete;
-	NoCopyNoMove(NoCopyNoMove&& rhs) = delete;
-	NoCopyNoMove& operator=(NoCopyNoMove&& rhs) = delete;
 };
 
 static_assert(!std::is_trivially_constructible_v<NoCopyNoMove>);
@@ -566,12 +569,14 @@ SCENARIO("Maybe: constructors")
 			dut_implicit.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					CHECK(wrap.m_method == Method::ValueConstructed);
+					// Note: move construction from variant::emplace
+					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 			dut_explicit.match(
 				[](Explicit& wrap) {
 					CHECK(wrap.m_value == 42);
+					// Note: move construction from variant::emplace
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
@@ -582,8 +587,8 @@ SCENARIO("Maybe: constructors")
 	{
 		const char forty_two = '*';
 		Maybe<int> dut{forty_two};
-		Maybe<Implicit> dut_implicit(forty_two);
-		Maybe<Explicit> dut_explicit(forty_two);
+		Maybe<Implicit> dut_implicit(dut);
+		Maybe<Explicit> dut_explicit(dut);
 
 		THEN("the Maybes contains the value")
 		{
@@ -591,13 +596,15 @@ SCENARIO("Maybe: constructors")
 			dut_implicit.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					CHECK(wrap.m_method == Method::ValueConstructed);
+					// Note: move construction from variant::emplace
+					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 			dut_explicit.match(
 				[](Explicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					CHECK(wrap.m_method == Method::ValueConstructed);
+					// Note: move construction from variant::emplace
+					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 		}
@@ -637,7 +644,7 @@ SCENARIO("Maybe: constructors")
 			dut_implicit1.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 33);
-					CHECK(wrap.m_method == Method::ValueConstructed);
+					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 			CHECK(dut_explicit_value.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
@@ -803,7 +810,8 @@ SCENARIO("Maybe: assignments")
 				dut_empty_lhs.match(
 					[](Implicit& wrap) {
 						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::CopyAssigned);
+						// Note: move construction from variant::emplace
+						CHECK(wrap.m_method == Method::MoveConstructed);
 					},
 					[](std::nullopt_t) { CHECK(false); });
 				dut_value_rhs.match(
@@ -886,7 +894,7 @@ SCENARIO("Maybe: assignments")
 				dut_empty_lhs.match(
 					[](Implicit& wrap) {
 						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::MoveAssigned);
+						CHECK(wrap.m_method == Method::MoveConstructed);
 					},
 					[](std::nullopt_t) { CHECK(false); });
 				CHECK_FALSE(dut_value_rhs.has_value());
@@ -915,7 +923,7 @@ SCENARIO("Maybe: assignments")
 			dut.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 101);
-					CHECK(wrap.m_method == Method::MoveAssigned);
+					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 		}
@@ -945,8 +953,11 @@ SCENARIO("Maybe: modifiers")
 			THEN("the Maybe holds the value")
 			{
 				CHECK(dut.has_value());
-				CHECK(dut.match([](NoCopyNoMove& value) { return value.m_value == 11; },
-								[](std::nullopt_t) { return false; }));
+				CHECK(dut.match(
+					[](NoCopyNoMove& value) {
+						return value.m_value == 11 && value.m_method == Method::ValueConstructed;
+					},
+					[](std::nullopt_t) { return false; }));
 				CHECK(result.m_value == 11);
 			}
 		}
@@ -960,7 +971,7 @@ SCENARIO("Maybe: modifiers")
 			THEN("the values are swapped")
 			{
 				CHECK(dut_a.match(
-					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::ValueConstructed; },
+					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::MoveConstructed; },
 					[](std::nullopt_t) { return false; }));
 				CHECK(dut_b.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
 			}
@@ -988,8 +999,11 @@ SCENARIO("Maybe: modifiers")
 			THEN("the Maybe holds the value")
 			{
 				CHECK(dut.has_value());
-				CHECK(dut.match([](NoCopyNoMove& value) { return value.m_value == 11; },
-								[](std::nullopt_t) { return false; }));
+				CHECK(dut.match(
+					[](NoCopyNoMove& value) {
+						return value.m_value == 11 && value.m_method == Method::ValueConstructed;
+					},
+					[](std::nullopt_t) { return false; }));
 				CHECK(result.m_value == 11);
 			}
 		}

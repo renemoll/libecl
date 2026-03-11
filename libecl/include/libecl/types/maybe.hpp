@@ -235,7 +235,7 @@ public:
 			if (has_value()) {
 				m_storage = rhs.m_storage;
 			} else {
-				m_storage = T(rhs);
+				m_storage = T(std::get<U>(rhs.m_storage));
 			}
 		} else {
 			reset();
@@ -291,7 +291,15 @@ public:
 				 !std::is_assignable_v<T&, const Maybe<U> &&>)
 	constexpr Maybe<T>& operator=(const Maybe<U>& rhs)
 	{
-		*this = Maybe(rhs);
+		if (rhs.has_value()) {
+			if (has_value()) {
+				m_storage = *rhs.m_storage;
+			} else {
+				m_storage = T(*rhs.m_storage);
+			}
+		} else {
+			reset();
+		}
 		return *this;
 	}
 
@@ -305,8 +313,16 @@ public:
 				 !std::is_assignable_v<T&, const Maybe<U> &&>)
 	constexpr Maybe<T>& operator=(Maybe<U>&& rhs)
 	{
-		*this = Maybe(std::move(rhs));
-		rhs.reset();
+		if (rhs.has_value()) {
+			if (has_value()) {
+				m_storage = std::move(*rhs.m_storage);
+			} else {
+				m_storage = T(std::move(*rhs.m_storage));
+			}
+			rhs.reset();
+		} else {
+			reset();
+		}
 		return *this;
 	}
 
@@ -317,9 +333,7 @@ public:
 		requires(std::is_constructible_v<T, Args...>)
 	constexpr T& emplace(Args&&... args)
 	{
-		// Note: using placement new here to be able to support non-movable types.
-		reset();
-		std::construct_at(&std::get<T>(m_storage), std::forward<Args>(args)...);
+		m_storage.template emplace<T>(std::forward<Args>(args)...);
 		return std::get<T>(m_storage);
 	}
 
@@ -330,9 +344,7 @@ public:
 		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args...>)
 	constexpr T& emplace(std::initializer_list<U> il, Args&&... args)
 	{
-		// Note: using placement new here to be able to support non-movable types.
-		reset();
-		std::construct_at(&std::get<T>(m_storage), il, std::forward<Args>(args)...);
+		m_storage.template emplace<T>(il, std::forward<Args>(args)...);
 		return std::get<T>(m_storage);
 	}
 
@@ -342,13 +354,13 @@ public:
 	{
 		if (has_value()) {
 			if (rhs.has_value()) {
-				std::swap(std::get<T>(m_storage), std::get<T>(rhs.m_storage));
+				std::swap(m_storage, rhs.m_storage);
 			} else {
-				std::construct_at(&std::get<T>(rhs.m_storage), std::move(std::get<T>(m_storage)));
+				rhs.m_storage = std::move(m_storage);
 				reset();
 			}
 		} else if (rhs.has_value()) {
-			std::construct_at(&std::get<T>(m_storage), std::move(std::get<T>(rhs.m_storage)));
+			m_storage = std::move(rhs.m_storage);
 			rhs.reset();
 		}
 	}
