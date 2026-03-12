@@ -19,16 +19,25 @@
 #include <variant>
 
 namespace libecl {
+namespace details {
 template <class... Ts>
 struct overload : Ts...
 {
 	using Ts::operator()...;
 
+#if __cplusplus >= 202302L
 	consteval void operator()(auto) const
 	{
 		static_assert(false, "Unsupported type");
 	}
+#endif
 };
+
+#if __cplusplus < 202302L
+template <class... Ts>
+overload(Ts...) -> overload<Ts...>;
+#endif
+}  // namespace details
 
 template <class T>
 class Maybe;
@@ -412,14 +421,14 @@ public:
 		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers)
 	{
-		return std::visit(overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
 
 	template <class... Matchers>
 		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers) const
 	{
-		return std::visit(overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
 
 	constexpr void reset() noexcept
