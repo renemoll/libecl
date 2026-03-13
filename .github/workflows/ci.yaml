@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gcc: [10, 11, 12, 13, 14, 15]
+        gcc: [10, 11, 12, 13, 14]
         cxx: [20, 23]
 
     runs-on: ubuntu-latest
