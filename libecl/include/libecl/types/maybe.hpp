@@ -68,7 +68,6 @@ constexpr bool converts_from_any_cvref = std::disjunction_v<std::is_constructibl
  *
  * \todo bring helpers/tags into the namespace?
  * \todo Custom variant?
- * \todo implement transform, and_then, or_else
  */
 template <typename T>
 class Maybe
