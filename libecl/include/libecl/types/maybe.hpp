@@ -21,7 +21,7 @@
 namespace libecl {
 namespace details {
 template <class... Ts>
-struct overload : Ts...
+struct Overload : Ts...
 {
 	using Ts::operator()...;
 
@@ -35,7 +35,7 @@ struct overload : Ts...
 
 #if __cplusplus < 202302L
 template <class... Ts>
-overload(Ts...) -> overload<Ts...>;
+Overload(Ts...) -> Overload<Ts...>;
 #endif
 }  // namespace details
 
@@ -421,14 +421,14 @@ public:
 		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers)
 	{
-		return std::visit(details::overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
 
 	template <class... Matchers>
 		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers) const
 	{
-		return std::visit(details::overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
 
 	constexpr void reset() noexcept
