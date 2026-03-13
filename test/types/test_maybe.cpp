@@ -294,23 +294,35 @@ static_assert(!std::is_move_assignable_v<NoCopyNoMove>);
 
 SCENARIO("Maybe: type traits")
 {
-	// TODO: depends on T...
-	// using T = Queue<uint8_t, 6>;
+	CHECK(std::is_copy_constructible_v<Implicit>);
+	CHECK(std::is_copy_assignable_v<Implicit>);
+	CHECK(std::is_move_constructible_v<Implicit>);
+	CHECK(std::is_move_assignable_v<Implicit>);
 
-	// static_assert(std::is_constructible_v<T>);
-	// static_assert(std::is_nothrow_constructible_v<T>);
+	CHECK(std::is_copy_constructible_v<Maybe<Implicit>>);
+	CHECK(std::is_copy_assignable_v<Maybe<Implicit>>);
+	CHECK(std::is_move_constructible_v<Maybe<Implicit>>);
+	CHECK(std::is_move_assignable_v<Maybe<Implicit>>);
 
-	// static_assert(std::is_default_constructible_v<T>);
-	// static_assert(std::is_nothrow_default_constructible_v<T>);
+	CHECK(std::is_copy_constructible_v<CopyOnly>);
+	CHECK(std::is_copy_assignable_v<CopyOnly>);
+	CHECK(!std::is_move_constructible_v<CopyOnly>);
+	CHECK(!std::is_move_assignable_v<CopyOnly>);
 
-	// static_assert(!std::is_copy_constructible_v<T>);
-	// static_assert(!std::is_copy_assignable_v<T>);
+	CHECK(std::is_copy_constructible_v<Maybe<CopyOnly>>);
+	CHECK(std::is_copy_assignable_v<Maybe<CopyOnly>>);
+	CHECK(std::is_move_constructible_v<Maybe<CopyOnly>>);
+	CHECK(std::is_move_assignable_v<Maybe<CopyOnly>>);
 
-	// static_assert(!std::is_move_constructible_v<T>);
-	// static_assert(!std::is_nothrow_move_constructible_v<T>);
+	CHECK(!std::is_copy_constructible_v<MoveOnly>);
+	CHECK(!std::is_copy_assignable_v<MoveOnly>);
+	CHECK(std::is_move_constructible_v<MoveOnly>);
+	CHECK(std::is_move_assignable_v<MoveOnly>);
 
-	// static_assert(!std::is_move_assignable_v<T>);
-	// static_assert(!std::is_nothrow_move_assignable_v<T>);
+	CHECK(!std::is_copy_constructible_v<Maybe<MoveOnly>>);
+	CHECK(!std::is_copy_assignable_v<Maybe<MoveOnly>>);
+	CHECK(std::is_move_constructible_v<Maybe<MoveOnly>>);
+	CHECK(std::is_move_assignable_v<Maybe<MoveOnly>>);
 }
 
 SCENARIO("Maybe: constructors")
@@ -569,14 +581,14 @@ SCENARIO("Maybe: constructors")
 			dut_implicit.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					// Note: move construction from variant::emplace
+					// Note: copy constructor creates a copy which is moved into the storage
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 			dut_explicit.match(
 				[](Explicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					// Note: move construction from variant::emplace
+					// Note: copy constructor creates a copy which is moved into the storage
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
@@ -596,14 +608,14 @@ SCENARIO("Maybe: constructors")
 			dut_implicit.match(
 				[](Implicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					// Note: move construction from variant::emplace
+					// Note: copy constructor creates a copy which is moved into the storage
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
 			dut_explicit.match(
 				[](Explicit& wrap) {
 					CHECK(wrap.m_value == 42);
-					// Note: move construction from variant::emplace
+					// Note: copy constructor creates a copy which is moved into the storage
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
@@ -810,7 +822,7 @@ SCENARIO("Maybe: assignments")
 				dut_empty_lhs.match(
 					[](Implicit& wrap) {
 						CHECK(wrap.m_value == 33);
-						// Note: move construction from variant::emplace
+						// Note: copy constructor creates a copy which is moved into the storage
 						CHECK(wrap.m_method == Method::MoveConstructed);
 					},
 					[](std::nullopt_t) { CHECK(false); });
@@ -934,26 +946,27 @@ SCENARIO("Maybe: modifiers")
 {
 	GIVEN("an empty Maybe")
 	{
-		Maybe<NoCopyNoMove> dut;
+		Maybe<NoCopyNoMove> dut_no_copy_move;
+		Maybe<Implicit> dut_empty;
 
 		WHEN("calling reset")
 		{
-			dut.reset();
+			dut_no_copy_move.reset();
 
 			THEN("the Maybe is empty")
 			{
-				CHECK_FALSE(dut.has_value());
+				CHECK_FALSE(dut_no_copy_move.has_value());
 			}
 		}
 
-		WHEN("calling emplace")
+		WHEN("calling emplace (copy)")
 		{
-			const auto& result = dut.emplace(11);
+			const auto& result = dut_no_copy_move.emplace(11);
 
 			THEN("the Maybe holds the value")
 			{
-				CHECK(dut.has_value());
-				CHECK(dut.match(
+				CHECK(dut_no_copy_move.has_value());
+				CHECK(dut_no_copy_move.match(
 					[](NoCopyNoMove& value) {
 						return value.m_value == 11 && value.m_method == Method::ValueConstructed;
 					},
@@ -962,44 +975,71 @@ SCENARIO("Maybe: modifiers")
 			}
 		}
 
-		WHEN("calling swap")
+		WHEN("calling emplace (move)")
 		{
-			Maybe<Implicit> dut_a;
-			Maybe<Implicit> dut_b = 2;
-			dut_a.swap(dut_b);
+			auto value = Implicit{42};
+			const auto& result = dut_empty.emplace(std::move(value));
+
+			THEN("the Maybe holds the value")
+			{
+				CHECK(dut_empty.has_value());
+				CHECK(dut_empty.match(
+					[](Implicit& wrap) { return wrap.m_value == 42 && wrap.m_method == Method::MoveConstructed; },
+					[](std::nullopt_t) { return false; }));
+				CHECK(result.m_value == 42);
+			}
+		}
+
+		WHEN("calling swap with an empty Maybe")
+		{
+			Maybe<Implicit> dut_empty2;
+			dut_empty.swap(dut_empty2);
 
 			THEN("the values are swapped")
 			{
-				CHECK(dut_a.match(
-					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::MoveConstructed; },
+				CHECK(dut_empty.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
+				CHECK(dut_empty2.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
+			}
+		}
+
+		WHEN("calling swap with an non-empty Maybe")
+		{
+			Maybe<Implicit> dut_value = 42;
+			dut_empty.swap(dut_value);
+
+			THEN("the values are swapped")
+			{
+				CHECK(dut_empty.match(
+					[](Implicit& wrap) { return wrap.m_value == 42 && wrap.m_method == Method::MoveConstructed; },
 					[](std::nullopt_t) { return false; }));
-				CHECK(dut_b.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
+				CHECK(dut_value.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
 			}
 		}
 	}
 
 	GIVEN("an Maybe with a value")
 	{
-		Maybe<NoCopyNoMove> dut = 42;
+		Maybe<NoCopyNoMove> dut_no_copy_move = 42;
+		Maybe<Implicit> dut_value = 4;
 
 		WHEN("calling reset")
 		{
-			dut.reset();
+			dut_no_copy_move.reset();
 
 			THEN("the Maybe is empty")
 			{
-				CHECK_FALSE(dut.has_value());
+				CHECK_FALSE(dut_no_copy_move.has_value());
 			}
 		}
 
-		WHEN("calling emplace")
+		WHEN("calling emplace (copy)")
 		{
-			const auto& result = dut.emplace(11);
+			const auto& result = dut_no_copy_move.emplace(11);
 
 			THEN("the Maybe holds the value")
 			{
-				CHECK(dut.has_value());
-				CHECK(dut.match(
+				CHECK(dut_no_copy_move.has_value());
+				CHECK(dut_no_copy_move.match(
 					[](NoCopyNoMove& value) {
 						return value.m_value == 11 && value.m_method == Method::ValueConstructed;
 					},
@@ -1008,18 +1048,46 @@ SCENARIO("Maybe: modifiers")
 			}
 		}
 
-		WHEN("calling swap")
+		WHEN("calling emplace (move)")
 		{
-			Maybe<Implicit> dut_a = 4;
-			Maybe<Implicit> dut_b = 2;
-			dut_a.swap(dut_b);
+			auto value = Implicit{42};
+			const auto& result = dut_value.emplace(std::move(value));
+
+			THEN("the Maybe holds the value")
+			{
+				CHECK(dut_value.has_value());
+				CHECK(dut_value.match(
+					[](Implicit& wrap) { return wrap.m_value == 42 && wrap.m_method == Method::MoveConstructed; },
+					[](std::nullopt_t) { return false; }));
+				CHECK(result.m_value == 42);
+			}
+		}
+
+		WHEN("calling swap with an empty Maybe")
+		{
+			Maybe<Implicit> dut_empty;
+			dut_value.swap(dut_empty);
 
 			THEN("the values are swapped")
 			{
-				CHECK(dut_a.match(
-					[](Implicit& wrap) { return wrap.m_value == 2 && wrap.m_method == Method::MoveAssigned; },
+				CHECK(dut_value.match([](Implicit&) { return false; }, [](std::nullopt_t) { return true; }));
+				CHECK(dut_empty.match(
+					[](Implicit& wrap) { return wrap.m_value == 4 && wrap.m_method == Method::MoveConstructed; },
 					[](std::nullopt_t) { return false; }));
-				CHECK(dut_b.match(
+			}
+		}
+
+		WHEN("calling swap with a non-empty Maybe")
+		{
+			Maybe<Implicit> dut_value2 = 42;
+			dut_value.swap(dut_value2);
+
+			THEN("the values are swapped")
+			{
+				CHECK(dut_value.match(
+					[](Implicit& wrap) { return wrap.m_value == 42 && wrap.m_method == Method::MoveAssigned; },
+					[](std::nullopt_t) { return false; }));
+				CHECK(dut_value2.match(
 					[](Implicit& wrap) { return wrap.m_value == 4 && wrap.m_method == Method::MoveAssigned; },
 					[](std::nullopt_t) { return false; }));
 			}
