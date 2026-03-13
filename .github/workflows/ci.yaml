@@ -9,6 +9,8 @@ on:
   workflow_dispatch:
   push:
   pull_request:
+  schedule:
+    - cron: '25 1 * * SUN' # every Sunday at 01:25
 
 jobs:
   # build-in-devcontainer:
