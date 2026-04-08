@@ -18,3 +18,7 @@ gcc-coverage:
 .PHONY: unittest
 gcc-unittest:
 	cmake --workflow --preset unittest-debug
+
+.PHONY: benchmark
+benchmark:
+	cmake --workflow --preset benchmark
