@@ -1,0 +1,11 @@
+{
+	"version": 6,
+	"configurePresets": [
+		{
+			"name": "ninja",
+			"description": "Use Ninja as generator",
+			"hidden": true,
+			"generator": "Ninja Multi-Config"
+		}
+	]
+}

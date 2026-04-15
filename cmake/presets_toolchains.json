@@ -1,0 +1,29 @@
+{
+	"version": 6,
+	"configurePresets": [
+		{
+			"name": "clang",
+			"description": "Configure Clang as the C/C++ compiler",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "clang",
+				"CMAKE_CXX_COMPILER": "clang++"
+			}
+		},
+		{
+			"name": "gcc",
+			"description": "Configure GCC as the C/C++ compiler",
+			"hidden": true,
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "gcc",
+				"CMAKE_CXX_COMPILER": "c++"
+			}
+		},
+		{
+			"name": "gcc-arm-none-eabi-cortex-m7",
+			"description": "Configure GCC ARM Embedded as the C/C++ compiler",
+			"hidden": true,
+			"toolchainFile": "cmake/bob-cmake/toolchains/toolchain_cortex-m7_fpu_dp.cmake"
+		}
+	]
+}
