@@ -16,7 +16,8 @@ path = [
     "cmake/bob-cmake/*.md",
     "doc/*",
     "README.md",
-    "CMakePresets.json"
+    "CMakePresets.json",
+    "cmake/*.json"
 ]
 SPDX-FileCopyrightText = "2025 René Moll"
 SPDX-License-Identifier = "CC0-1.0"

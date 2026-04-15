@@ -1,0 +1,20 @@
+{
+	"version": 6,
+	"configurePresets": [
+		{
+			"name": "default-config",
+			"description": "Default configuration",
+			"hidden": true,
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"installDir": "${sourceDir}/install"
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "default-build",
+			"description": "Default build configuration",
+			"hidden": true,
+			"configurePreset": "default-config"
+		}
+	]
+}
