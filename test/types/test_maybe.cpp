@@ -292,6 +292,14 @@ static_assert(!std::is_move_constructible_v<NoCopyNoMove>);
 static_assert(!std::is_move_assignable_v<NoCopyNoMove>);
 }  // namespace
 
+SCENARIO("Maybe: invalid types")
+{
+	// Note: the following types should not compile.
+	// Maybe<std::in_place_t> dut1{};
+	// Maybe<void> dut2{};
+	// Maybe<std::nullopt_t> dut3{};
+}
+
 SCENARIO("Maybe: type traits")
 {
 	CHECK(std::is_copy_constructible_v<Implicit>);
@@ -1228,9 +1236,115 @@ SCENARIO("Maybe: monadic operations")
 	}
 }
 
-SCENARIO("Maybe: invalid types")
+SCENARIO("Maybe: relational operators")
 {
-	// Maybe<std::in_place_t> dut1{};
-	// Maybe<void> dut2{};
-	// Maybe<std::nullopt_t> dut3{};
+	WHEN("comparing two engaged Maybes with the same value")
+	{
+		Maybe<int> dut_lhs = 42;
+		Maybe<int> dut_rhs = 42;
+
+		THEN("they are equal")
+		{
+			CHECK(dut_lhs == dut_rhs);
+			CHECK_FALSE(dut_lhs != dut_rhs);
+			CHECK_FALSE(dut_lhs < dut_rhs);
+			CHECK_FALSE(dut_lhs > dut_rhs);
+			CHECK(dut_lhs <= dut_rhs);
+			CHECK(dut_lhs >= dut_rhs);
+		}
+	}
+
+	WHEN("comparing two engagedMaybes with different values")
+	{
+		Maybe<int> dut_lhs = 42;
+		Maybe<int> dut_rhs = 33;
+
+		THEN("they are not equal, lhs > rhs")
+		{
+			CHECK_FALSE(dut_lhs == dut_rhs);
+			CHECK(dut_lhs != dut_rhs);
+			CHECK_FALSE(dut_lhs < dut_rhs);
+			CHECK(dut_lhs > dut_rhs);
+			CHECK_FALSE(dut_lhs <= dut_rhs);
+			CHECK(dut_lhs >= dut_rhs);
+		}
+	}
+
+	WHEN("comparing a disengaged Maybe with an engaged Maybe")
+	{
+		Maybe<int> dut_lhs = std::nullopt;
+		Maybe<int> dut_rhs = 42;
+
+		THEN("the disengaged Maybe is less than the engaged Maybe")
+		{
+			CHECK_FALSE(dut_lhs == dut_rhs);
+			CHECK(dut_lhs != dut_rhs);
+			CHECK(dut_lhs < dut_rhs);
+			CHECK_FALSE(dut_lhs > dut_rhs);
+			CHECK(dut_lhs <= dut_rhs);
+			CHECK_FALSE(dut_lhs >= dut_rhs);
+		}
+	}
+
+	WHEN("comparing two disengaged Maybes")
+	{
+		Maybe<int> dut_lhs = std::nullopt;
+		Maybe<int> dut_rhs = std::nullopt;
+
+		THEN("they are equal")
+		{
+			CHECK(dut_lhs == dut_rhs);
+			CHECK_FALSE(dut_lhs != dut_rhs);
+			CHECK_FALSE(dut_lhs < dut_rhs);
+			CHECK_FALSE(dut_lhs > dut_rhs);
+			CHECK(dut_lhs <= dut_rhs);
+			CHECK(dut_lhs >= dut_rhs);
+		}
+	}
+
+	WHEN("comparing an engaged Maybe with a value")
+	{
+		Maybe<int> dut = 42;
+
+		THEN("the Maybe is equal to the value")
+		{
+			CHECK(dut == 42);
+			CHECK_FALSE(dut != 42);
+			CHECK_FALSE(dut < 42);
+			CHECK_FALSE(dut > 42);
+			CHECK(dut <= 42);
+			CHECK(dut >= 42);
+		}
+	}
+
+	WHEN("comparing a disengaged Maybe with a value")
+	{
+		Maybe<int> dut = std::nullopt;
+
+		THEN("the Maybe is not equal to the value, the Maybe is less than the value")
+		{
+			CHECK_FALSE(dut == 42);
+			CHECK(dut != 42);
+			CHECK(dut < 42);
+			CHECK_FALSE(dut > 42);
+			CHECK(dut <= 42);
+			CHECK_FALSE(dut >= 42);
+		}
+	}
+
+	WHEN("comparing an engaged Maybe with nullopt")
+	{
+		Maybe<int> dut = 42;
+
+		THEN("the Maybe is not equal to nullopt")
+		{
+			CHECK_FALSE(dut == std::nullopt);
+			CHECK(dut != std::nullopt);
+			// CHECK_FALSE(dut < std::nullopt);
+			// TODO: trigger a compiler error..
+			CHECK(dut > std::nullopt);
+			CHECK_FALSE(dut <= std::nullopt);
+			CHECK(dut >= std::nullopt);
+		}
+	}
 }
