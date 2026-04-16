@@ -6,7 +6,18 @@
 			"description": "Default configuration",
 			"hidden": true,
 			"binaryDir": "${sourceDir}/build/${presetName}",
-			"installDir": "${sourceDir}/install"
+			"installDir": "${sourceDir}/install",
+			"warnings": {
+				"dev": true,
+				"deprecated": true,
+				"uninitialized": true,
+				"unusedCli": true,
+				"systemVars": false
+			},
+			"errors": {
+				"dev": false,
+				"deprecated": true
+			}
 		}
 	],
 	"buildPresets": [

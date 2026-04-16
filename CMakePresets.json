@@ -33,6 +33,38 @@
 				"gcc-arm-none-eabi-cortex-m7",
 				"ninja"
 			]
+		},
+		{
+			"name": "coverage-ninja-gcc",
+			"description": "Build using GCC, Ninja, and coverage analysis",
+			"inherits": [
+				"coverage",
+				"ninja-gcc"
+			]
+		},
+		{
+			"name": "coverage-ninja-clang",
+			"description": "Build using Clang, Ninja, and coverage analysis",
+			"inherits": [
+				"coverage",
+				"ninja-clang"
+			]
+		},
+		{
+			"name": "benchmark-ninja-gcc",
+			"description": "Build using GCC, Ninja, and benchmarking",
+			"inherits": [
+				"benchmark",
+				"ninja-gcc"
+			]
+		},
+		{
+			"name": "benchmark-ninja-clang",
+			"description": "Build using Clang, Ninja, and benchmarking",
+			"inherits": [
+				"benchmark",
+				"ninja-clang"
+			]
 		}
 	],
 	"buildPresets": [
@@ -92,6 +124,88 @@
 			"description": "Release build with GCC ARM Embedded and Ninja for Arm Cortex-M7",
 			"inherits": "ninja-gcc-cortex-m7",
 			"configuration": "Release"
+		},
+		{
+			"name": "coverage-ninja-gcc",
+			"description": "Build with GCC and Ninja",
+			"hidden": true,
+			"inherits": "default-build",
+			"configurePreset": "coverage-ninja-gcc"
+		},
+		{
+			"name": "coverage-ninja-gcc-debug",
+			"description": "Debug build with GCC and Ninja",
+			"inherits": "coverage-ninja-gcc",
+			"configuration": "Debug",
+			"targets":[
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "coverage-ninja-gcc-release",
+			"description": "Release build with GCC and Ninja",
+			"inherits": "coverage-ninja-gcc",
+			"configuration": "Release",
+			"targets":[
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "coverage-ninja-clang",
+			"description": "Build with Clang and Ninja",
+			"hidden": true,
+			"inherits": "default-build",
+			"configurePreset": "coverage-ninja-clang"
+		},
+		{
+			"name": "coverage-ninja-clang-debug",
+			"description": "Debug build with Clang and Ninja",
+			"inherits": "coverage-ninja-clang",
+			"configuration": "Debug",
+			"targets":[
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "coverage-ninja-clang-release",
+			"description": "Release build with Clang and Ninja",
+			"inherits": "coverage-ninja-clang",
+			"configuration": "Release",
+			"targets":[
+				"libecl-coverage"
+			]
+		},
+		{
+			"name": "benchmark-ninja-gcc",
+			"description": "Benchmark build with GCC and Ninja",
+			"hidden": true,
+			"inherits": "default-build",
+			"configurePreset": "benchmark-ninja-gcc"
+		},
+		{
+			"name": "benchmark-ninja-gcc-release",
+			"description": "Benchmark release build with GCC and Ninja",
+			"inherits": "benchmark-ninja-gcc",
+			"configuration": "Release",
+			"targets":[
+				"benchmark_queue_spsc"
+			]
+		},
+		{
+			"name": "benchmark-ninja-clang",
+			"description": "Benchmark build with Clang and Ninja",
+			"hidden": true,
+			"inherits": "default-build",
+			"configurePreset": "benchmark-ninja-clang"
+		},
+		{
+			"name": "benchmark-ninja-clang-release",
+			"description": "Benchmark release build with Clang and Ninja",
+			"inherits": "benchmark-ninja-clang",
+			"configuration": "Release",
+			"targets":[
+				"benchmark_queue_spsc"
+			]
 		}
 	],
 	"testPresets": [
@@ -259,7 +373,7 @@
 				}
 			]
 		},
-{
+		{
 			"name": "unittest-clang-debug",
 			"steps": [
 				{
@@ -290,6 +404,84 @@
 				{
 					"type": "test",
 					"name": "ninja-clang-release"
+				}
+			]
+		},
+		{
+			"name": "coverage-gcc-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-gcc"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-gcc-debug"
+				}
+			]
+		},
+		{
+			"name": "coverage-gcc-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-gcc"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-gcc-release"
+				}
+			]
+		},
+		{
+			"name": "coverage-clang-debug",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-clang"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-clang-debug"
+				}
+			]
+		},
+		{
+			"name": "coverage-clang-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "coverage-ninja-clang"
+				},
+				{
+					"type": "build",
+					"name": "coverage-ninja-clang-release"
+				}
+			]
+		},
+		{
+			"name": "benchmark-ninja-gcc-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "benchmark-ninja-gcc"
+				},
+				{
+					"type": "build",
+					"name": "benchmark-ninja-gcc-release"
+				}
+			]
+		},
+		{
+			"name": "benchmark-ninja-clang-release",
+			"steps": [
+				{
+					"type": "configure",
+					"name": "benchmark-ninja-clang"
+				},
+				{
+					"type": "build",
+					"name": "benchmark-ninja-clang-release"
 				}
 			]
 		}

@@ -8,6 +8,14 @@
 			"cacheVariables": {
 				"BOB_COVERAGE": "On"
 			}
+		},
+		{
+			"name": "benchmark",
+			"description": "Build benchmarks",
+			"hidden": true,
+			"cacheVariables": {
+				"BENCHMARK": "On"
+			}
 		}
 	]
 }
