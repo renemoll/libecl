@@ -5,20 +5,24 @@
 
 .PHONY: clang-coverage
 clang-coverage:
-	CC=clang CXX=clang++ cmake --workflow --preset coverage
+	cmake --workflow --preset coverage-clang-debug
 
 .PHONY: clang-unittest
 clang-unittest:
-	CC=clang CXX=clang++ cmake --workflow --preset unittest-debug
+	cmake --workflow --preset unittest-clang-debug
 
 .PHONY: coverage
 gcc-coverage:
-	cmake --workflow --preset coverage
+	cmake --workflow --preset coverage-gcc-debug
 
 .PHONY: unittest
 gcc-unittest:
-	cmake --workflow --preset unittest-debug
+	cmake --workflow --preset unittest-gcc-debug
 
-.PHONY: benchmark
-benchmark:
-	cmake --workflow --preset benchmark
+.PHONY: gcc-m7
+gcc-m7:
+	cmake --workflow --preset build-gcc-cortex-m7-debug
+
+# .PHONY: benchmark
+# benchmark:
+# 	cmake --workflow --preset benchmark
