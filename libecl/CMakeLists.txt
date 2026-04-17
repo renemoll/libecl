@@ -20,11 +20,16 @@ target_sources(libecl
 			"${CMAKE_CURRENT_LIST_DIR}/include"
 		FILES
 			"include/libecl/containers/aligned_storage.hpp"
-			"include/libecl/containers/queue.hpp"
+			"include/libecl/containers/queue_spsc.hpp"
 )
 set_target_properties(libecl
 	PROPERTIES
 		LINKER_LANGUAGE CXX
+)
+
+target_compile_options(libecl
+	PUBLIC
+		$<$<CXX_COMPILER_ID:GNU>:-Wno-interference-size>
 )
 
 target_compile_features(libecl

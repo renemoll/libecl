@@ -14,7 +14,7 @@ add_executable(unittests)
 
 target_sources(unittests
 	PRIVATE
-		test_queue.cpp
+		test_queue_spsc.cpp
 )
 
 target_link_libraries(unittests
