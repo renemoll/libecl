@@ -22,6 +22,10 @@ target_sources(libecl
 			"include/libecl/containers/aligned_storage.hpp"
 			"include/libecl/containers/queue.hpp"
 )
+set_target_properties(libecl
+	PROPERTIES
+		LINKER_LANGUAGE CXX
+)
 
 target_compile_features(libecl
 	PUBLIC
