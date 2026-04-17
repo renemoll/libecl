@@ -210,10 +210,16 @@ private:
 	// Note: m_storage has size `N + 1` to allow differentiation between full and empty.
 	std::array<AlignedStorage<value_type>, N + 1> m_storage = {};
 
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_write{0};
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_read{0};
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_write_cache{0};
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_read_cache{0};
+#if __cpp_lib_hardware_interference_size >= 201603L
+	constexpr static std::size_t padding_size = std::hardware_destructive_interference_size;
+#else
+	constexpr static std::size_t padding_size = 128;
+#endif
+
+	alignas(padding_size) std::atomic<size_type> m_write{0};
+	alignas(padding_size) std::atomic<size_type> m_read{0};
+	alignas(padding_size) std::atomic<size_type> m_write_cache{0};
+	alignas(padding_size) std::atomic<size_type> m_read_cache{0};
 
 	[[nodiscard]] std::size_t next_index(std::size_t index) const noexcept
 	{
