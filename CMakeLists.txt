@@ -26,8 +26,10 @@ endif()
 add_subdirectory(libecl)
 
 if(PROJECT_IS_TOP_LEVEL)
-	add_subdirectory(benchmark)
+	if (NOT CMAKE_CROSSCOMPILING)
+		add_subdirectory(benchmark)
 
-	enable_testing()
-	add_subdirectory(test)
+		enable_testing()
+		add_subdirectory(test)
+	endif()
 endif()
