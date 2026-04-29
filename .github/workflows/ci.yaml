@@ -59,3 +59,10 @@ jobs:
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -B build/ninja-release -S .
           cmake --build build/ninja-release
           ctest --test-dir build/ninja-release/
+
+      - name: ARM Cortex-M7 build
+        run: |
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -DCMAKE_TOOLCHAIN_FILE=cmake/bob-cmake/toolchains/toolchain_cortex-m7_fpu_dp.cmake -B build/ninja-m7-debug -S .
+          cmake --build build/ninja-m7-debug
+          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.cxx }} -DCMAKE_TOOLCHAIN_FILE=cmake/bob-cmake/toolchains/toolchain_cortex-m7_fpu_dp.cmake -B build/ninja-m7-release -S .
+          cmake --build build/ninja-m7-release
