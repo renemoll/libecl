@@ -218,8 +218,8 @@ private:
 
 	alignas(padding_size) std::atomic<size_type> m_write{0};
 	alignas(padding_size) std::atomic<size_type> m_read{0};
-	alignas(padding_size) std::atomic<size_type> m_write_cache{0};
-	alignas(padding_size) std::atomic<size_type> m_read_cache{0};
+	alignas(padding_size) size_type m_write_cache{0};
+	alignas(padding_size) size_type m_read_cache{0};
 
 	[[nodiscard]] std::size_t next_index(std::size_t index) const noexcept
 	{
