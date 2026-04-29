@@ -64,13 +64,17 @@ public:
 	//! \returns True when the queue is empty, false otherwise.
 	[[nodiscard]] bool empty() const noexcept
 	{
-		return m_write == m_read;
+		const auto read_index = m_read.load(std::memory_order_relaxed);
+		const auto write_index = m_write.load(std::memory_order_acquire);
+		return read_index == write_index;
 	}
 
+	//! \returns True when the queue is full, false otherwise.
 	[[nodiscard]] bool full() const noexcept
 	{
-		const size_type next_write = next_index(m_write);
-		return next_write == m_read;
+		const auto read_index = m_read.load(std::memory_order_relaxed);
+		const auto write_index = m_write.load(std::memory_order_acquire);
+		return next_index(write_index) == read_index;
 	}
 
 	/*!
@@ -210,11 +214,16 @@ private:
 	// Note: m_storage has size `N + 1` to allow differentiation between full and empty.
 	std::array<AlignedStorage<value_type>, N + 1> m_storage = {};
 
+	// TODO: determine if I want to use std::hardware_destructive_interference_size or just a fixed padding size.
+	//       first because it generates an error unless Wno-interference-size is used
+	//       second, I doubt newlib supports it
 #if __cpp_lib_hardware_interference_size >= 201603L
 	constexpr static std::size_t padding_size = std::hardware_destructive_interference_size;
 #else
 	constexpr static std::size_t padding_size = 128;
 #endif
+
+	static_assert(std::atomic<size_type>::is_always_lock_free);
 
 	alignas(padding_size) std::atomic<size_type> m_write{0};
 	alignas(padding_size) std::atomic<size_type> m_read{0};
