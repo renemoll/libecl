@@ -11,11 +11,11 @@ clang-coverage:
 clang-unittest:
 	cmake --workflow --preset unittest-clang-debug
 
-.PHONY: coverage
+.PHONY: gcc-coverage
 gcc-coverage:
 	cmake --workflow --preset coverage-gcc-debug
 
-.PHONY: unittest
+.PHONY: gcc-unittest
 gcc-unittest:
 	cmake --workflow --preset unittest-gcc-debug
 
