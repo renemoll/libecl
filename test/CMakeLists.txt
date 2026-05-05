@@ -30,3 +30,18 @@ bob_create_coverage_report(
 	RUNNER
 		unittests
 )
+
+add_executable(tsan_queue_spsc)
+
+target_sources(tsan_queue_spsc
+	PRIVATE
+		tsan_queue_spsc.cpp
+)
+
+target_link_libraries(tsan_queue_spsc
+	PRIVATE
+		libecl::libecl
+)
+
+# TODO: only enable ThreadSanitizer for this target
+# bob_sanitize_enable_sanitizer(tsan_queue_spsc "thread")
