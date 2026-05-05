@@ -479,8 +479,8 @@ private:
 	std::array<AlignedStorage<value_type>, N + 1> m_storage = {};
 	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_write{0};
 	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_read{0};
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_write_cache{0};
-	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_read_cache{0};
+	alignas(std::hardware_destructive_interference_size) size_type m_write_cache{0};
+	alignas(std::hardware_destructive_interference_size) size_type m_read_cache{0};
 };
 
 BENCHMARK(BM_QueueSpsc<QueueV1<int, 100'000>>)->Arg(100'000'000);
@@ -489,23 +489,3 @@ BENCHMARK(BM_QueueSpsc<QueueV3<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV4<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV5<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV6<int, 100'000>>)->Arg(100'000'000);
-
-/*!
- * V1: base implementation
- * V2: added memory orderings to the atomic operations.
- * V3: aligned storage for the read and write indices to different cache lines to avoid false sharing.
- * V4: replaced modulo with a branch to wrap around the indices.
- * V5: cache read/write indices.
- * V6: added likely/unlikely hints.
- *
- * Variation   | (items/s)
- * ----------- | -----------
- *  QueueV1    |  12.8153M/s
- *  QueueV2    |  60.1057M/s
- *  QueueV3    |  78.4198M/s
- *  QueueV4    |  66.4483M/s
- *  QueueV5    | 152.294M/s
- *  QueueV6    | 177.823M/s
- *
- * Todo: rebuild with other benchmark package?
- */
