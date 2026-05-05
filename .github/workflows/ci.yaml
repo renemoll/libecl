@@ -60,10 +60,28 @@ jobs:
           cmake --build build/ninja-release
           ctest --test-dir build/ninja-release/
 
+  build-linux-armgcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        armgcc: ['15.2.Rel1']
+        cxx: [20, 23]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: bootstrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install clang-tidy cmake ninja-build cppcheck flawfinder iwyu
+
       - name: ARM GCC bootstrap
         uses: carlosperate/arm-none-eabi-gcc-action@v1
         with:
-          release: '15.2.Rel1'
+          release: '${{ matrix.armgcc }}'
 
       - name: ARM Cortex-M7 build
         run: |
