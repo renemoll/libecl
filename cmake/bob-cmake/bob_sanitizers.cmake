@@ -27,7 +27,8 @@ option(BOB_SANITIZE_THREAD "Enable ThreadSanitizer" Off)
 #
 # bob_configure_sanitizers
 #
-# Enable compiler sanitizers for the given `TARGET`.
+# Enable compiler sanitizers for the given `TARGET`. The specific sanitizers to enable are
+# determined by the `BOB_SANITIZE_*` options.
 #
 function(bob_configure_sanitizers TARGET)
 
@@ -70,7 +71,7 @@ function(bob_configure_sanitizers TARGET)
 		#
 
 		if (NOT BOB_COVERAGE)
-			add_compile_options(
+			add_compile_options( 		# TODO: only apply these options to the given `TARGET`
 				-O1						# Recommended for "reasonable performance"
 				-fno-omit-frame-pointer # For better stack traces
 				-g						# For file names and line numbers
@@ -93,3 +94,24 @@ function(bob_configure_sanitizers TARGET)
 		)
 	endif()
 endfunction()
+
+# #
+# # bob_sanitize_enable_sanitizer
+# #
+# # Enable compiler sanitizers for the given `TARGET`. The specific sanitizers to enable are
+# # determined by the function arguments. This function is intended when you want to deviate
+# # from the global sanitizer configuration (e.g. enable ThreadSanitizer for a specific target).
+# #
+# function(bob_sanitize_enable_sanitizer TARGET SANITIZERS)
+# 	# cmake_parse_arguments(args "" "" "SANITIZERS" ${ARGN})
+# 	message(STATUS "Enabling sanitizers '${SANITIZERS}' for target '${TARGET}'")
+#
+# 	target_compile_options(${TARGET}
+# 		PUBLIC
+# 			-fsanitize=${SANITIZERS}
+# 	)
+# 	target_link_options(${TARGET}
+# 		PUBLIC
+# 			-fsanitize=${SANITIZERS}
+# 	)
+# endfunction()
