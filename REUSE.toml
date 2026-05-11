@@ -11,6 +11,7 @@ path = [
     ".devcontainer/*",
     ".gitattributes",
     ".gitignore",
+    ".gitmodules",
     ".pre-commit-config.yaml",
     ".vscode/*",
     "cmake/bob-cmake/*.md",
