@@ -38,7 +38,9 @@ target_compile_features(libecl
 )
 
 if(PROJECT_IS_TOP_LEVEL)
-	bob_configure_project(libecl)
+	bob_configure_target(libecl
+		ENABLE_CLANG_TIDY Off
+	)
 
 	install(
 		TARGETS
