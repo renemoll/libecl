@@ -24,12 +24,12 @@ target_link_libraries(unittests
 )
 
 catch_discover_tests(unittests)
-bob_create_coverage_report(
-	NAME
-		libecl-coverage
-	RUNNER
-		unittests
-)
+# bob_create_coverage_report(
+# 	NAME
+# 		libecl-coverage
+# 	RUNNER
+# 		unittests
+# )
 
 add_executable(tsan_queue_spsc)
 
