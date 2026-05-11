@@ -13,15 +13,16 @@ ARG CATCH2_VERSION=3.14.0
 ARG CLANG_VERSION=19
 ARG GCC_VERSION=14
 ARG GCC_ARM_VERSION=15.2.rel1
-ARG INCLUDE_WHAT_YOU_USE_VERSION=0.26
+# Note: beware to match the version of include-what-you-use with the clang version
+ARG INCLUDE_WHAT_YOU_USE_VERSION=0.23
 
 ARG USER_NAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-LABEL org.opencontainers.image.title "Build environment for libecl"
-LABEL org.opencontainers.image.authors "René Moll"
-LABEL org.opencontainers.image.licenses "MPL-2.0"
+LABEL org.opencontainers.image.title="Build environment for libecl"
+LABEL org.opencontainers.image.authors="René Moll"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 
 #
 # Required tools
