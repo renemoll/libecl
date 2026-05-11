@@ -1,0 +1,3 @@
+[submodule "cmake/bob-cmake"]
+	path = cmake/bob-cmake
+	url = https://github.com/renemoll/bob-cmake.git
