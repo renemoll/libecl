@@ -24,24 +24,29 @@ target_link_libraries(unittests
 )
 
 catch_discover_tests(unittests)
-# bob_create_coverage_report(
-# 	NAME
-# 		libecl-coverage
-# 	RUNNER
-# 		unittests
-# )
-
-add_executable(tsan_queue_spsc)
-
-target_sources(tsan_queue_spsc
-	PRIVATE
-		tsan_queue_spsc.cpp
+bob_generate_coverage_report(
+	TARGET
+		libecl-coverage
+	RUNNER
+		unittests
 )
 
-target_link_libraries(tsan_queue_spsc
+add_executable(unittests-tsan)
+
+target_sources(unittests-tsan
+	PRIVATE
+		test_queue_spsc_tsan.cpp
+)
+
+target_link_libraries(unittests-tsan
 	PRIVATE
 		libecl::libecl
+		Catch2::Catch2WithMain
 )
 
-# TODO: only enable ThreadSanitizer for this target
-# bob_sanitize_enable_sanitizer(tsan_queue_spsc "thread")
+catch_discover_tests(unittests-tsan)
+bob_configure_target(unittests-tsan
+	ENABLE_THREAD_SANITIZER On
+	ENABLE_ADDRESS_SANITIZER Off
+	ENABLE_LEAK_SANITIZER Off
+)

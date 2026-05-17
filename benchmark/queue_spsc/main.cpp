@@ -31,9 +31,9 @@ public:
 	 * \pre   The buffer is empty, no object is stored in there.
 	 * \post  The object is stored in the buffer.
 	 */
-	void store(const_reference value) noexcept
+	void store(const_reference value)
 	{
-		::new (&m_storage) value_type(value);
+		m_data = ::new (&m_storage) value_type(value);
 	}
 
 	/*!
@@ -41,9 +41,20 @@ public:
 	 * \pre   The buffer is empty, no object is stored in there.
 	 * \post  The object is stored in the buffer.
 	 */
-	void store(rvalue_reference value) noexcept
+	void store(rvalue_reference value)
 	{
-		::new (&m_storage) value_type(std::forward<T>(value));
+		m_data = ::new (&m_storage) value_type(std::forward<T>(value));
+	}
+
+	/*!
+	 * \brief Construct a new object in the buffer.
+	 * \pre   The buffer is empty, no object is stored in there.
+	 * \post  The object is stored in the buffer.
+	 */
+	template <typename... Args>
+	void emplace(Args&&... args)
+	{
+		m_data = ::new (&m_storage) value_type(std::forward<Args>(args)...);
 	}
 
 	/*!
@@ -51,33 +62,37 @@ public:
 	 * \pre   An object is stored in the buffer.
 	 * \post  The buffer is empty.
 	 */
-	void destroy() noexcept
+	void destroy()
 	{
-		data()->~T();
+		if (m_data == nullptr) {
+			return;
+		}
+
+		m_data->~T();
+		m_data = nullptr;
 	}
 
 	/*!
 	 * \return A pointer to the contents of the buffer.
 	 * \note   Only valid after something has been placed inside the buffer.
 	 */
-	[[nodiscard]] pointer data() noexcept
+	[[nodiscard]] pointer data()
 	{
-		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		return std::launder(reinterpret_cast<pointer>(&m_storage));
+		return m_data;
 	}
 
-	[[nodiscard]] const_pointer data() const noexcept
+	[[nodiscard]] const_pointer data() const
 	{
-		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		return std::launder(reinterpret_cast<const_pointer>(&m_storage));
+		return m_data;
 	}
 
 private:
 	// NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays)
-	alignas(T) std::byte m_storage[sizeof(T)];
+	alignas(T) std::byte m_storage[sizeof(T)] = {};
+	T* m_data = nullptr;
 };
 
-void pin_thread(int cpu_id)
+void pin_thread(std::size_t cpu_id)
 {
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
