@@ -23,6 +23,6 @@ gcc-unittest:
 gcc-m7:
 	cmake --workflow --preset build-gcc-cortex-m7-debug
 
-# .PHONY: benchmark
-# benchmark:
-# 	cmake --workflow --preset benchmark
+.PHONY: benchmark
+benchmark:
+	cmake --workflow --preset benchmark-gcc-release

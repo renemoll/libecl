@@ -404,7 +404,7 @@
 			]
 		},
 		{
-			"name": "benchmark-ninja-gcc-release",
+			"name": "benchmark-gcc-release",
 			"steps": [
 				{
 					"type": "configure",
@@ -417,7 +417,7 @@
 			]
 		},
 		{
-			"name": "benchmark-ninja-clang-release",
+			"name": "benchmark-clang-release",
 			"steps": [
 				{
 					"type": "configure",
