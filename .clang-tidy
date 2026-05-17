@@ -3,6 +3,13 @@
 # SPDX-License-Identifier: CC0-1.0
 #
 
+#
+# Disabled:
+#   cppcoreguidelines-owning-memory    -> Generates too much false positives at this time.
+#   misc-include-cleaner               -> Does not improves readability w.r.t. system includes.
+#   modernize-use-trailing-return-type -> As I do not believe this improves readability.
+#
+
 Checks: >
   bugprone-*,
 
@@ -11,7 +18,7 @@ Checks: >
   concurrency-*,
 
   cppcoreguidelines-*,
-  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-owning-memory,
 
   hicpp-*,
 
@@ -26,7 +33,6 @@ Checks: >
   portability-*,
 
   readability-*,
-  -readability-magic-numbers,
 
 
 WarningsAsErrors: '*'
