@@ -11,17 +11,14 @@
 #define LIBECL_CONTAINERS_ALIGNED_STORAGE_H
 
 #include <cstddef>
-#include <new>
 #include <type_traits>
 #include <utility>
 
 namespace libecl::containers {
 
 /*!
- * \brief     Aligned memory to store objects.
+ * \brief     Aligned memory to store an arbitrary object.
  * \ttparam T Type of the object to store.
- *
- * Implemented according to [P1413R2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1413r2.pdf).
  */
 template <typename T>
 class AlignedStorage
@@ -32,16 +29,18 @@ public:
 	using const_pointer = std::add_pointer_t<const T>;
 	using reference = std::add_lvalue_reference_t<value_type>;
 	using const_reference = std::add_lvalue_reference_t<std::add_const_t<value_type>>;
-	using r_reference = std::add_rvalue_reference_t<value_type>;
+	using rvalue_reference = std::add_rvalue_reference_t<value_type>;
 
 	/*!
 	 * \brief Store a copy of \a value in the buffer.
 	 * \pre   The buffer is empty, no object is stored in there.
 	 * \post  The object is stored in the buffer.
 	 */
+	template <typename U = T>
+		requires(std::is_nothrow_copy_constructible_v<U>)
 	void store(const_reference value)
 	{
-		::new (&m_storage) value_type(value);
+		m_data = ::new (&m_storage) value_type(value);
 	}
 
 	/*!
@@ -49,9 +48,11 @@ public:
 	 * \pre   The buffer is empty, no object is stored in there.
 	 * \post  The object is stored in the buffer.
 	 */
-	void store(r_reference value)
+	template <typename U = T>
+		requires(std::is_nothrow_move_constructible_v<U>)
+	void store(rvalue_reference value)
 	{
-		::new (&m_storage) value_type(std::forward<T>(value));
+		m_data = ::new (&m_storage) value_type(std::forward<T>(value));
 	}
 
 	/*!
@@ -59,10 +60,11 @@ public:
 	 * \pre   The buffer is empty, no object is stored in there.
 	 * \post  The object is stored in the buffer.
 	 */
-	template <typename... Args>
+	template <typename U = T, typename... Args>
+		requires(std::is_nothrow_constructible_v<U, Args...>)
 	void emplace(Args&&... args)
 	{
-		::new (&m_storage) value_type(std::forward<Args>(args)...);
+		m_data = ::new (&m_storage) value_type(std::forward<Args>(args)...);
 	}
 
 	/*!
@@ -72,28 +74,32 @@ public:
 	 */
 	void destroy()
 	{
-		data()->~T();
+		if (m_data == nullptr) {
+			return;
+		}
+
+		m_data->~T();
+		m_data = nullptr;
 	}
 
 	/*!
 	 * \return A pointer to the contents of the buffer.
 	 * \note   Only valid after something has been placed inside the buffer.
 	 */
-	[[nodiscard]] pointer data()
+	[[nodiscard]] pointer data() noexcept
 	{
-		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		return std::launder(reinterpret_cast<pointer>(&m_storage));
+		return m_data;
 	}
 
-	[[nodiscard]] const_pointer data() const
+	[[nodiscard]] const_pointer data() const noexcept
 	{
-		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		return std::launder(reinterpret_cast<const_pointer>(&m_storage));
+		return m_data;
 	}
 
 private:
-	// NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays)
-	alignas(T) std::byte m_storage[sizeof(T)];
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
+	alignas(T) std::byte m_storage[sizeof(T)] = {};
+	T* m_data = nullptr;
 };
 }  // namespace libecl::containers
 

@@ -310,13 +310,13 @@ SCENARIO("QueueSpsc: store objects")
 	{
 	public:
 		Element() noexcept
-			: m_i{0}
+			: m_value{0}
 		{
 			allocations++;
 		}
 
-		explicit Element(int i) noexcept
-			: m_i{i}
+		explicit Element(int value) noexcept
+			: m_value{value}
 		{
 			allocations++;
 		}
@@ -327,7 +327,7 @@ SCENARIO("QueueSpsc: store objects")
 		}
 
 		Element(const Element& obj) noexcept
-			: m_i{obj.m_i}
+			: m_value{obj.m_value}
 		{
 			copied++;
 		}
@@ -335,14 +335,15 @@ SCENARIO("QueueSpsc: store objects")
 		Element& operator=(const Element& other) noexcept = default;
 
 		Element(Element&& obj) noexcept
-			: m_i{obj.m_i}
+			: m_value{obj.m_value}
 		{
 			moved++;
 		}
 
 		Element& operator=(Element&& other) noexcept = default;
 
-		int m_i;
+		// NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
+		int m_value;
 	};
 	static_assert(std::is_default_constructible_v<Element>);
 	static_assert(std::is_copy_constructible_v<Element>);
@@ -390,11 +391,11 @@ SCENARIO("QueueSpsc: store objects")
 		{
 			const auto* result = dut.emplace(6);
 			REQUIRE(result != nullptr);
-			REQUIRE(result->m_i == 6);
+			REQUIRE(result->m_value == 6);
 
 			// THEN("value can be retrieved")
 			// {
-			// 	REQUIRE(dut.front().m_i == 6);
+			// 	REQUIRE(dut.front().m_value == 6);
 			// }
 			THEN("number of allocations match calls to emplace")
 			{
@@ -409,7 +410,7 @@ SCENARIO("QueueSpsc: store objects")
 				{
 					auto value = Element{0};
 					REQUIRE(dut.pop(value));
-					REQUIRE(value.m_i == 6);
+					REQUIRE(value.m_value == 6);
 				}
 
 				THEN("number of deallocations match the number of allocations")
@@ -434,8 +435,8 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 	class Element
 	{
 	public:
-		explicit Element(int i) noexcept
-			: m_i{i}
+		explicit Element(int value) noexcept
+			: m_value{value}
 		{
 			allocations++;
 		}
@@ -446,7 +447,7 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 		}
 
 		Element(const Element& obj) noexcept
-			: m_i{obj.m_i}
+			: m_value{obj.m_value}
 		{
 			copied++;
 		}
@@ -454,14 +455,15 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 		Element& operator=(const Element& other) noexcept = default;
 
 		Element(Element&& obj) noexcept
-			: m_i{obj.m_i}
+			: m_value{obj.m_value}
 		{
 			moved++;
 		}
 
 		Element& operator=(Element&& other) noexcept = default;
 
-		int m_i;
+		// NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
+		int m_value;
 	};
 	static_assert(!std::is_default_constructible_v<Element>);
 	static_assert(std::is_copy_constructible_v<Element>);
@@ -508,11 +510,11 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 		{
 			const auto* result = dut.emplace(6);
 			REQUIRE(result != nullptr);
-			REQUIRE(result->m_i == 6);
+			REQUIRE(result->m_value == 6);
 
 			// THEN("value can be retrieved")
 			// {
-			// 	REQUIRE(dut.front().m_i == 6);
+			// 	REQUIRE(dut.front().m_value == 6);
 			// }
 			THEN("number of allocations match calls to emplace")
 			{
@@ -527,7 +529,7 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 				{
 					auto value = Element{0};
 					REQUIRE(dut.pop(value));
-					REQUIRE(value.m_i == 6);
+					REQUIRE(value.m_value == 6);
 				}
 
 				THEN("number of deallocations match the number of allocations")
