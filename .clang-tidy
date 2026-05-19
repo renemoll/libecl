@@ -18,6 +18,7 @@ Checks: >
   concurrency-*,
 
   cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-owning-memory,
 
   hicpp-*,
@@ -33,6 +34,7 @@ Checks: >
   portability-*,
 
   readability-*,
+  -readability-magic-numbers,
 
 
 WarningsAsErrors: '*'
