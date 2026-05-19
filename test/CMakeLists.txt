@@ -24,6 +24,10 @@ target_link_libraries(unittests
 )
 
 catch_discover_tests(unittests)
+bob_configure_target(unittests
+    # TODO: either use scan-build or ensure system headers use -isystem to avoid warnings
+	ENABLE_CLANG_TIDY Off
+)
 bob_generate_coverage_report(
 	TARGET
 		libecl-coverage
@@ -46,7 +50,15 @@ target_link_libraries(unittests-tsan
 
 catch_discover_tests(unittests-tsan)
 bob_configure_target(unittests-tsan
-	ENABLE_THREAD_SANITIZER On
+	ENABLE_CLANG_TIDY Off
+	#
+	# The idea was this test should run with ThreadSanitizer, however there is some kind of  issue
+	# with it. There are some workarounds regarding the address space layout randomization (ASLR),
+	# but I do not like that idea, so for now I disable ThreadSanitizer.
+	#
+	# https://stackoverflow.com/questions/77850769/fatal-threadsanitizer-unexpected-memory-mapping-when-running-on-linux-kernels
+	#
+	ENABLE_THREAD_SANITIZER Off
 	ENABLE_ADDRESS_SANITIZER Off
 	ENABLE_LEAK_SANITIZER Off
 )

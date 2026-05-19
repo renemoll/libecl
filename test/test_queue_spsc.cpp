@@ -17,7 +17,8 @@ using namespace libecl::containers;
 
 SCENARIO("QueueSpsc: type traits")
 {
-	using T = QueueSpsc<uint8_t, 6>;
+	constexpr std::size_t capacity = 2;
+	using T = QueueSpsc<uint8_t, capacity>;
 
 	static_assert(std::is_constructible_v<T>);
 	static_assert(std::is_nothrow_constructible_v<T>);
@@ -39,11 +40,12 @@ SCENARIO("QueueSpsc: initialization")
 {
 	WHEN("constructing a queue")
 	{
-		QueueSpsc<uint8_t, 6> dut{};
+		constexpr std::size_t capacity = 6;
+		QueueSpsc<uint8_t, capacity> dut{};
 
 		THEN("capacity matches the fixed size")
 		{
-			REQUIRE(dut.capacity() == 6U);
+			REQUIRE(dut.capacity() == capacity);
 		}
 		THEN("queue is empty")
 		{
@@ -63,7 +65,8 @@ SCENARIO("QueueSpsc: push/pop")
 {
 	GIVEN("an empty queue")
 	{
-		QueueSpsc<std::size_t, 7> dut{};
+		constexpr std::size_t capacity = 7;
+		QueueSpsc<std::size_t, capacity> dut{};
 
 		WHEN("pushing a single element")
 		{
@@ -119,7 +122,8 @@ SCENARIO("QueueSpsc: push/pop")
 
 	GIVEN("a full queue")
 	{
-		QueueSpsc<std::size_t, 6> dut{};
+		constexpr std::size_t capacity = 6;
+		QueueSpsc<std::size_t, capacity> dut{};
 		for (std::size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(i + 1));
 		}
@@ -183,7 +187,6 @@ SCENARIO("QueueSpsc: push/pop")
 			THEN("queue is empty")
 			{
 				REQUIRE(dut.empty());
-				std::size_t value = 0;
 				REQUIRE_FALSE(dut.pop(value));
 			}
 		}
@@ -194,11 +197,12 @@ SCENARIO("QueueSpsc: emplace")
 {
 	GIVEN("an empty queue")
 	{
-		QueueSpsc<std::size_t, 3> dut{};
+		constexpr std::size_t capacity = 3;
+		QueueSpsc<std::size_t, capacity> dut{};
 
 		WHEN("emplacing a single element")
 		{
-			REQUIRE(dut.emplace(1));
+			REQUIRE(dut.emplace(1U));
 
 			// THEN("the element is stored")
 			// {
@@ -215,7 +219,7 @@ SCENARIO("QueueSpsc: emplace")
 		WHEN("emplacing data until full")
 		{
 			for (std::size_t i = 0; i < dut.capacity(); ++i) {
-				REQUIRE(dut.emplace(i + 1));
+				REQUIRE(dut.emplace(i + 1U));
 				REQUIRE_FALSE(dut.empty());
 
 				// THEN("the front remains intact")
@@ -249,7 +253,8 @@ SCENARIO("QueueSpsc: emplace")
 
 	GIVEN("a full queue")
 	{
-		QueueSpsc<std::size_t, 6> dut{};
+		constexpr std::size_t capacity = 6;
+		QueueSpsc<std::size_t, capacity> dut{};
 		for (std::size_t i = 0; i < dut.capacity(); ++i) {
 			REQUIRE(dut.push(i + 1));
 		}
@@ -351,7 +356,8 @@ SCENARIO("QueueSpsc: store objects")
 
 	GIVEN("an empty queue")
 	{
-		QueueSpsc<Element, 6> dut{};
+		constexpr std::size_t capacity = 6;
+		QueueSpsc<Element, capacity> dut{};
 
 		WHEN("pushing data to the queue")
 		{
@@ -471,7 +477,8 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 
 	GIVEN("an empty queue")
 	{
-		QueueSpsc<Element, 6> dut{};
+		constexpr std::size_t capacity = 6;
+		QueueSpsc<Element, capacity> dut{};
 
 		WHEN("pushing data to the queue")
 		{
