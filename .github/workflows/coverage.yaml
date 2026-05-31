@@ -30,9 +30,9 @@ jobs:
       - name: bootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install clang-tidy cmake ninja-build g++ cppcheck flawfinder catch2 iwyu
+          sudo apt-get install clang-tidy cmake ninja-build g++ gcovr cppcheck flawfinder catch2 iwyu
 
-      - name: Release build & test
+      - name: Build & test
         run: |
           make gcc-coverage
 
