@@ -16,6 +16,13 @@ on:
       - '.devcontainer/Dockerfile'
       - '.github/workflow/devcontainer.yaml'
   pull_request:
+    branches:
+      - 'main'
+      - 'development'
+      - 'releases/**'
+    paths:
+      - '.devcontainer/Dockerfile'
+      - '.github/workflow/devcontainer.yaml'
 
 env:
   REGISTRY: ghcr.io
