@@ -23,8 +23,8 @@ The basic API is based on generic sequence containers as defined in the C++ STL.
 * `capacity` and `size` to return the maximum and current number of elements stored;
 * `clear` to reset the buffer;
 * `emplace` to create a new element in-place;
-* `empty` to indidate if there is data in the queue;
-* `front` to access the first element;
+* `empty` to indicate if there is data in the queue;
+* ~`front` to access the first element;~
 * `full` to indicate the buffer is full and old entries will be overwritten;
 * `pop` to remove the oldest element from the buffer;
 * `push` to add a new element to the buffer;
@@ -61,8 +61,8 @@ end
 
 The following API calls are meant for the consumer:
 
-* `front` to access the first element;
-* `empty` to indidate if there is data in the queue;
+* ~`front` to access the first element;~
+* `empty` to indicate if there is data in the queue;
 * `pop` to remove the oldest element from the buffer;
 
 ```
@@ -94,7 +94,7 @@ end
 
 ### Aligned storage
 
-To store objects of arbitrary size, a seperare storage type (`StorageType`) is introduced. This type ensured there is enough memory allocated, and using the corrent alignment, for the object to store. The buffer itself is an array of this `StorageType`.
+To store objects of arbitrary size, a separate storage type is introduced. This type ensured there is enough memory allocated, and using the correct alignment, for the object to store. The buffer itself is an array of this storage type.
 
 ### Distinguish between empty and full
 
@@ -105,3 +105,11 @@ The internal buffer is sized one element larger then required, to allow the buff
 1. [Why is std::aligned_storage to be deprecated in C++23 and what to use instead?](https://stackoverflow.com/questions/71828288/why-is-stdaligned-storage-to-be-deprecated-in-c23-and-what-to-use-instead)
 
 1. [What's the best way to have aligned storage for an object so you can do placement new (and do explicit d'tor calls later)?](https://www.reddit.com/r/cpp/comments/1dree7m/whats_the_best_way_to_have_aligned_storage_for_an/)
+
+
+# TODO
+
+- cache line size for cortex-m
+https://en.wikipedia.org/wiki/ARM_Cortex-M#Silicon_customization
+  -> optional for M7, M35P, M52, M55, M85
+  - size: 32bytes
