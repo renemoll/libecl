@@ -1,0 +1,45 @@
+#
+# SPDX-FileCopyrightText: 2025 René Moll
+# SPDX-License-Identifier: CC0-1.0
+#
+
+name: Code coverage
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+  code-quality: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: bootstrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install clang-tidy cmake ninja-build g++ cppcheck flawfinder catch2 iwyu
+
+      - name: Release build & test
+        run: |
+          make gcc-coverage
+
+      - name: Upload coverage report
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: build/coverage-ninja-gcc/coverage_libecl-coverage/cobertura.xml
+          language: C++
+          label: code-coverage/libecl-gcc-release
