@@ -218,7 +218,7 @@ private:
 	// TODO: determine if I want to use std::hardware_destructive_interference_size or just a fixed padding size.
 	//       first because it generates an error unless Wno-interference-size is used
 	//       second, I doubt newlib supports it
-#if __cpp_lib_hardware_interference_size >= 201603L
+#if defined(__cpp_lib_hardware_interference_size) && (__cpp_lib_hardware_interference_size >= 201603L)
 	constexpr static std::size_t padding_size = std::hardware_destructive_interference_size;
 #else
 	constexpr static std::size_t padding_size = 128;
