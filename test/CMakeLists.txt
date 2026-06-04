@@ -14,6 +14,7 @@ add_executable(unittests)
 
 target_sources(unittests
 	PRIVATE
+		test_message_pool.cpp
 		test_queue_spsc.cpp
 )
 

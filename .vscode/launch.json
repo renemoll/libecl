@@ -8,11 +8,16 @@
             "name": "unit-test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/ninja-debug/test/unittests",
+            "program": "${workspaceFolder}/build/ninja-gcc/test/Debug/unittests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "LSAN_OPTIONS",
+                    "value": "verbosity=1:log_threads=1"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
