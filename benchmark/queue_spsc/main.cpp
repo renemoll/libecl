@@ -105,31 +105,33 @@ void pin_thread(std::size_t cpu_id)
 template <typename Q>
 void BM_QueueSpsc(benchmark::State& state)
 {
-	const int num_iters = state.range(0);
+	const int num_iters = static_cast<int>(state.range(0));
+	assert(state.range(0) < std::numeric_limits<int>::max());
 
 	for (auto _ : state) {
-		auto queue = Q{};
+		{
+			auto queue = Q{};
 
-		auto consumer = std::thread([&] {
-			pin_thread(2);
-			for (auto i = 0; i < num_iters; ++i) {
-				auto value = 0;
-				while (!queue.pop(value))
-					;
-				if (value != i) {
-					throw std::runtime_error("Values not matching");
+			auto consumer = std::jthread([&] {
+				pin_thread(2);
+				for (int i = 0; i < num_iters; ++i) {
+					int value = 0;
+					while (!queue.pop(value))
+						;
+					if (value != i) {
+						throw std::runtime_error("Values not matching");
+					}
 				}
+			});
+
+			pin_thread(3);
+
+			for (int i = 0; i < num_iters; ++i) {
+				while (!queue.push(i))
+					;
 			}
-		});
-
-		pin_thread(3);
-
-		for (auto i = 0; i < num_iters; ++i) {
-			while (!queue.push(i))
-				;
 		}
-
-		consumer.join();
+		benchmark::ClobberMemory();
 	}
 
 	state.SetItemsProcessed(state.iterations() * num_iters);
@@ -498,9 +500,77 @@ private:
 	alignas(std::hardware_destructive_interference_size) size_type m_read_cache{0};
 };
 
+/*!
+ * Changes w.r.t V1:
+ * - limited capacity to a power of two to allow using bitwise AND for wrapping around the indices.
+ * - added likely/unlikely hints. (QueueV6)
+ * - cache read/write indices. (QueueV5)
+ * - replaced modulo with a branch to wrap around the indices. (QueueV4)
+ * - aligned storage for the read and write indices to different cache lines to avoid false sharing. (QueueV3)
+ * - added memory orderings to the atomic operations. (QueueV2)
+ */
+template <typename T, std::size_t N>
+class QueueV7
+{
+public:
+	using value_type = T;
+	using size_type = std::size_t;
+	using pointer = std::add_pointer_t<T>;
+	using const_pointer = std::add_pointer_t<std::add_const_t<value_type>>;
+	using reference = std::add_lvalue_reference_t<value_type>;
+	using const_reference = std::add_lvalue_reference_t<std::add_const_t<value_type>>;
+	using rvalue_reference = std::add_rvalue_reference_t<value_type>;
+
+	// TODO: std::has_single_bit ?
+	static_assert(N > 0, "N must be greater than 0");
+	static_assert((N & (N - 1)) == 0, "N must be a power of two");
+
+	bool push(const_reference value) noexcept
+	{
+		const size_type write_count = m_write.load(std::memory_order_relaxed);
+
+		if ((write_count - m_read_cache) == N) [[unlikely]] {
+			m_read_cache = m_read.load(std::memory_order_acquire);
+			if ((write_count - m_read_cache) == N) [[unlikely]] {
+				return false;
+			}
+		}
+
+		m_storage[write_count & (N - 1)].store(value);
+		m_write.store(write_count + 1, std::memory_order_release);
+		return true;
+	}
+
+	bool pop(T& value) noexcept
+	{
+		const size_type read_count = m_read.load(std::memory_order_relaxed);
+		if (read_count == m_write_cache) [[unlikely]] {
+			m_write_cache = m_write.load(std::memory_order_acquire);
+			if (read_count == m_write_cache) [[unlikely]] {
+				return false;  // queue is empty
+			}
+		}
+
+		value = std::move(*m_storage[read_count & (N - 1)].data());
+		m_storage[read_count & (N - 1)].destroy();
+
+		m_read.store(read_count + 1, std::memory_order_release);
+		return true;
+	}
+
+private:
+	// Note: m_storage has size N (power of two); counters differentiate full and empty states.
+	std::array<AlignedStorage<value_type>, N> m_storage = {};
+	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_write{0};
+	alignas(std::hardware_destructive_interference_size) std::atomic<size_type> m_read{0};
+	alignas(std::hardware_destructive_interference_size) size_type m_write_cache{0};
+	alignas(std::hardware_destructive_interference_size) size_type m_read_cache{0};
+};
+
 BENCHMARK(BM_QueueSpsc<QueueV1<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV2<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV3<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV4<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV5<int, 100'000>>)->Arg(100'000'000);
 BENCHMARK(BM_QueueSpsc<QueueV6<int, 100'000>>)->Arg(100'000'000);
+BENCHMARK(BM_QueueSpsc<QueueV7<int, 131'072>>)->Arg(100'000'000);

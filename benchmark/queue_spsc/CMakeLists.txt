@@ -22,3 +22,11 @@ target_link_libraries(benchmark_queue_spsc
         benchmark::benchmark_main
         pthread
 )
+
+bob_configure_target(benchmark_queue_spsc
+	ENABLE_CLANG_TIDY Off
+	ENABLE_THREAD_SANITIZER Off
+	ENABLE_ADDRESS_SANITIZER Off
+	ENABLE_LEAK_SANITIZER Off
+    ENABLE_UNDEFINED_BEHAVIOUR_SANITIZER Off
+)
