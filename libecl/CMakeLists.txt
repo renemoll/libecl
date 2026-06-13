@@ -27,11 +27,6 @@ set_target_properties(libecl
 		LINKER_LANGUAGE CXX
 )
 
-target_compile_options(libecl
-	PUBLIC
-		$<$<CXX_COMPILER_ID:GNU>:-Wno-interference-size>
-)
-
 target_compile_features(libecl
 	PUBLIC
 		cxx_std_20
