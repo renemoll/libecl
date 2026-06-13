@@ -16,8 +16,10 @@
 #include <atomic>
 #include <cassert>
 #include <cstddef>
+#include <limits>
 #include <new>
 #include <type_traits>
+#include <utility>
 
 namespace libecl::containers {
 /*!
@@ -36,6 +38,9 @@ namespace libecl::containers {
 template <typename T, std::size_t N>
 class QueueSpsc
 {
+	static_assert(N > 0, "Queue capacity must be greater than 0.");
+	static_assert(N < std::numeric_limits<std::size_t>::max(), "Queue capacity is too large.");
+
 public:
 	using value_type = T;
 	using size_type = std::size_t;
@@ -73,8 +78,8 @@ public:
 	//! \returns True when the queue is full, false otherwise.
 	[[nodiscard]] bool full() const noexcept
 	{
-		const auto read_index = m_read.load(std::memory_order_relaxed);
-		const auto write_index = m_write.load(std::memory_order_acquire);
+		const auto read_index = m_read.load(std::memory_order_acquire);
+		const auto write_index = m_write.load(std::memory_order_relaxed);
 		return next_index(write_index) == read_index;
 	}
 
@@ -103,11 +108,12 @@ public:
 	/*!
 	 * \brief   Pushes the given \a value into an empty slot within the queue.
 	 * \param   value The value to store.
-	 * \returns True when \a valve is accepted, false if the queue is full.
+	 * \returns True when \a value is accepted, false if the queue is full.
+	 *
+	 * \todo try_push and use try_emplace?
 	 */
-	template <typename U = T>
-		requires(std::is_nothrow_copy_constructible_v<U>)
 	bool push(const_reference value) noexcept
+		requires(std::is_nothrow_copy_constructible_v<value_type>)
 	{
 		const size_type write_index = m_write.load(std::memory_order_relaxed);
 		const size_type next_write = next_index(write_index);
@@ -127,11 +133,12 @@ public:
 	/*!
 	 * \brief   Pushes the given \a value into an empty slot within the queue.
 	 * \param   value The value to store.
-	 * \returns True when \a valve is accepted, false if the queue is full.
+	 * \returns True when \a value is accepted, false if the queue is full.
+	 *
+	 * \todo try_push and forward to try_emplace? is_constructible?
 	 */
-	template <typename U = T>
-		requires(std::is_nothrow_move_constructible_v<U>)
 	bool push(r_reference value) noexcept
+		requires(std::is_nothrow_move_constructible_v<value_type>)
 	{
 		const size_type write_index = m_write.load(std::memory_order_relaxed);
 		const size_type next_write = next_index(write_index);
@@ -143,7 +150,7 @@ public:
 			}
 		}
 
-		m_storage[write_index].store(std::forward<value_type>(value));
+		m_storage[write_index].store(std::move(value));
 		m_write.store(next_write, std::memory_order_release);
 		return true;
 	}
@@ -152,6 +159,8 @@ public:
 	 * \brief   Constructs a new object, in-place, in an empty slot within the queue.
 	 * \param   args The arguments to the new object.
 	 * \returns A pointer to the newly created object when space was available, nullptr otherwise.
+	 *
+	 * \todo try_emplace? and return bool?
 	 */
 	template <typename... Args>
 		requires(std::is_nothrow_constructible_v<T, Args...>)
@@ -172,10 +181,13 @@ public:
 		return m_storage[write_index].data();
 	}
 
-	//! \returns True when the last element is removed from the queue.
-	template <typename U = T>
-		requires(std::is_nothrow_move_constructible_v<U>)
+	/*!
+	 * \returns True when the last element is removed from the queue.
+	 * \todo try_pop? or consume as we pop and return?
+	 * \todo add alternative with optional type (move constructable).
+	 */
 	bool pop(value_type& value) noexcept
+		requires(std::is_nothrow_move_assignable_v<value_type>)
 	{
 		const size_type read_index = m_read.load(std::memory_order_relaxed);
 		if (read_index == m_write_cache) [[unlikely]] {
@@ -193,7 +205,10 @@ public:
 		return true;
 	}
 
-	//! \brief Resets the queue, any stored objects are destroyed.
+	/*!
+	 * \brief Resets the queue, any stored objects are destroyed.
+	 * \note  This operation is not thread-safe and should only be called when no other thread is accessing the queue.
+	 */
 	void clear()
 	{
 		if (!std::is_trivially_destructible_v<value_type>) {
