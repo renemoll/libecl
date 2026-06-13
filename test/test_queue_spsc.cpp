@@ -10,6 +10,7 @@
 #include "libecl/containers/queue_spsc.hpp"
 
 #include <type_traits>
+#include <utility>
 
 #include "catch2/catch_test_macros.hpp"
 
@@ -34,6 +35,54 @@ SCENARIO("QueueSpsc: type traits")
 
 	static_assert(!std::is_move_assignable_v<T>);
 	static_assert(!std::is_nothrow_move_assignable_v<T>);
+
+	struct CopyConstructionOnly
+	{
+		CopyConstructionOnly() = default;
+		CopyConstructionOnly(const CopyConstructionOnly&) noexcept = default;
+		CopyConstructionOnly& operator=(const CopyConstructionOnly&) = delete;
+		CopyConstructionOnly(CopyConstructionOnly&&) = delete;
+		CopyConstructionOnly& operator=(CopyConstructionOnly&&) = delete;
+	};
+	static_assert(std::is_nothrow_copy_constructible_v<CopyConstructionOnly>);
+	static_assert(!std::is_nothrow_copy_assignable_v<CopyConstructionOnly>);
+	static_assert(!std::is_nothrow_move_constructible_v<CopyConstructionOnly>);
+	static_assert(!std::is_nothrow_move_assignable_v<CopyConstructionOnly>);
+
+	using CopyQueue = QueueSpsc<CopyConstructionOnly, capacity>;
+	static_assert(requires(CopyQueue& q, const CopyConstructionOnly& value) { q.push(value); });
+
+	struct MoveConstructionOnly
+	{
+		MoveConstructionOnly() = default;
+		MoveConstructionOnly(const MoveConstructionOnly&) = delete;
+		MoveConstructionOnly& operator=(const MoveConstructionOnly&) = delete;
+		MoveConstructionOnly(MoveConstructionOnly&&) noexcept = default;
+		MoveConstructionOnly& operator=(MoveConstructionOnly&&) = delete;
+	};
+	static_assert(std::is_nothrow_move_constructible_v<MoveConstructionOnly>);
+	static_assert(!std::is_nothrow_move_assignable_v<MoveConstructionOnly>);
+
+	using MoveQueue = QueueSpsc<MoveConstructionOnly, capacity>;
+	static_assert(requires(MoveQueue& q, MoveConstructionOnly&& value) { q.push(std::move(value)); });
+	static_assert(requires(MoveQueue& q) { q.emplace(); });
+
+	struct ThrowingMoveAssign
+	{
+		ThrowingMoveAssign() = default;
+		ThrowingMoveAssign(const ThrowingMoveAssign&) = delete;
+		ThrowingMoveAssign& operator=(const ThrowingMoveAssign&) = delete;
+		ThrowingMoveAssign(ThrowingMoveAssign&&) noexcept = default;
+		ThrowingMoveAssign& operator=(ThrowingMoveAssign&&) noexcept(false)
+		{
+			return *this;
+		}
+	};
+	static_assert(std::is_nothrow_move_constructible_v<ThrowingMoveAssign>);
+	static_assert(!std::is_nothrow_move_assignable_v<ThrowingMoveAssign>);
+
+	using ThrowingAssignQueue = QueueSpsc<ThrowingMoveAssign, capacity>;
+	static_assert(requires(ThrowingAssignQueue& q, ThrowingMoveAssign&& value) { q.push(std::move(value)); });
 }
 
 SCENARIO("QueueSpsc: initialization")
@@ -549,4 +598,89 @@ SCENARIO("QueueSpsc: store objects without default constructors")
 			}
 		}
 	}
+}
+
+SCENARIO("QueueSpsc: clear calls the destructor for non-trivially destructible types")
+{
+	allocations = 0;
+	deallocations = 0;
+
+	class Element
+	{
+	public:
+		explicit Element(int value) noexcept
+			: m_value{value}
+		{
+			allocations++;
+		}
+
+		~Element() noexcept
+		{
+			deallocations++;
+		}
+
+		Element(const Element&) = delete;
+		Element& operator=(const Element&) = delete;
+		Element(Element&&) noexcept = default;
+		Element& operator=(Element&&) noexcept = default;
+
+		int m_value;
+	};
+
+	{
+		QueueSpsc<Element, 3> dut{};
+		REQUIRE(dut.emplace(1) != nullptr);
+		REQUIRE(dut.emplace(2) != nullptr);
+		REQUIRE(dut.emplace(3) != nullptr);
+
+		auto output = Element{0};
+		REQUIRE(dut.pop(output));
+		REQUIRE(output.m_value == 1);
+		REQUIRE(dut.emplace(4) != nullptr);
+
+		dut.clear();
+		REQUIRE(dut.empty());
+		REQUIRE(deallocations == 4);
+	}
+
+	REQUIRE(allocations == deallocations);
+}
+
+SCENARIO("QueueSpsc: destructor calls the destructor for non-trivially destructible types")
+{
+	allocations = 0;
+	deallocations = 0;
+
+	class Element
+	{
+	public:
+		explicit Element(int value) noexcept
+			: m_value{value}
+		{
+			allocations++;
+		}
+
+		~Element() noexcept
+		{
+			deallocations++;
+		}
+
+		Element(const Element&) = delete;
+		Element& operator=(const Element&) = delete;
+		Element(Element&&) noexcept = default;
+		Element& operator=(Element&&) noexcept = default;
+
+		int m_value;
+	};
+
+	{
+		QueueSpsc<Element, 4> dut{};
+		REQUIRE(dut.emplace(11) != nullptr);
+		REQUIRE(dut.emplace(12) != nullptr);
+		REQUIRE(dut.emplace(13) != nullptr);
+		REQUIRE(allocations == 3);
+		REQUIRE(deallocations == 0);
+	}
+
+	REQUIRE(allocations == deallocations);
 }
