@@ -10,6 +10,7 @@
 #ifndef LIBECL_CONTAINERS_QUEUE_SPSC_H
 #define LIBECL_CONTAINERS_QUEUE_SPSC_H
 
+#include "libecl/config_options.hpp"
 #include "libecl/containers/aligned_storage.hpp"
 
 #include <array>
@@ -230,13 +231,19 @@ private:
 	// Note: m_storage has size `N + 1` to allow differentiation between full and empty.
 	std::array<AlignedStorage<value_type>, N + 1> m_storage = {};
 
-	// TODO: determine if I want to use std::hardware_destructive_interference_size or just a fixed padding size.
-	//       first because it generates an error unless Wno-interference-size is used
-	//       second, I doubt newlib supports it
 #if defined(__cpp_lib_hardware_interference_size) && (__cpp_lib_hardware_interference_size >= 201603L)
+#ifdef BOB_COMPILER_GCC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winterference-size"
+#endif
+
 	constexpr static std::size_t padding_size = std::hardware_destructive_interference_size;
+
+#ifdef BOB_COMPILER_GCC
+#pragma GCC diagnostic pop
+#endif
 #else
-	constexpr static std::size_t padding_size = 128;
+	constexpr static std::size_t padding_size = 64;
 #endif
 
 	static_assert(std::atomic<size_type>::is_always_lock_free);

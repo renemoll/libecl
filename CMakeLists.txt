@@ -19,17 +19,43 @@ project(libecl
 		0.1.0
 )
 
-if(PROJECT_IS_TOP_LEVEL)
-	include(bob)
+#
+# Project options.
+#
+
+set(LIBECL_DEFAULT_OPTION ${PROJECT_IS_TOP_LEVEL})
+option(LIBECL_BUILD_BENCHMARKS "Build benchmarks" ${LIBECL_DEFAULT_OPTION})
+option(LIBECL_BUILD_TESTS "Build tests" ${LIBECL_DEFAULT_OPTION})
+
+
+#
+# C++ standard configuration.
+# Allow for C++ standard to be set via CLI.
+#
+
+if(NOT CMAKE_CXX_STANDARD)
+	set(CMAKE_CXX_STANDARD 20)
 endif()
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
+
+#
+# Include cmake utilities, bob.
+#
+
+include(bob)
+
+#
+# Add project code.
+#
 
 add_subdirectory(libecl)
 
-if(PROJECT_IS_TOP_LEVEL)
-	if (NOT CMAKE_CROSSCOMPILING)
-		add_subdirectory(benchmark)
+if(LIBECL_BUILD_BENCHMARKS AND NOT CMAKE_CROSSCOMPILING)
+	add_subdirectory(benchmark)
+endif()
 
-		enable_testing()
-		add_subdirectory(test)
-	endif()
+if(LIBECL_BUILD_TESTS AND NOT CMAKE_CROSSCOMPILING)
+	enable_testing()
+	add_subdirectory(test)
 endif()
