@@ -9,6 +9,7 @@
 
 #include "libecl/containers/queue_spsc.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <iostream>
@@ -23,6 +24,8 @@ SCENARIO("QueueSpsc: single producer single consumer")
 {
 	GIVEN("a queue with a single producer and a single consumer")
 	{
+		std::atomic<bool> mismatch_detected{false};
+
 		constexpr int queue_size = 100;
 		constexpr int num_items = 100'000;
 
@@ -34,7 +37,7 @@ SCENARIO("QueueSpsc: single producer single consumer")
 				while (!queue.pop(value)) {
 				}
 				if (value != i) {
-					throw std::runtime_error("Values not matching");
+					mismatch_detected = true;
 				}
 			}
 		});
@@ -52,5 +55,6 @@ SCENARIO("QueueSpsc: single producer single consumer")
 
 		const auto elapsed = stop - start;
 		std::cout << (num_items * 1s) / elapsed << " items/s\n";
+		REQUIRE(!mismatch_detected);
 	}
 }
