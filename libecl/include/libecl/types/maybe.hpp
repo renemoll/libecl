@@ -90,7 +90,7 @@ public:
 	/*!
 	 * \brief Explicit empty construction.
 	 */
-	constexpr Maybe(std::nullopt_t value) noexcept
+	constexpr explicit Maybe(std::nullopt_t value) noexcept
 		: m_storage{value}
 	{
 	}
@@ -98,30 +98,34 @@ public:
 	/*!
 	 * \brief Copy constructor.
 	 */
-	template <typename U = T>
-		requires(std::is_copy_constructible_v<U>)
 	constexpr Maybe(Maybe const& rhs)
+		requires(std::is_copy_constructible_v<value_type>)
 		: m_storage(rhs.m_storage)
 	{
 	}
 
+	// Default copy constructor is deleted to ensure value_type is copy constructible.
+	constexpr Maybe(const Maybe&) = delete;
+
 	/*!
 	 * \brief Move constructor.
 	 */
-	template <typename U = T>
-		requires(std::is_move_constructible_v<U>)
-	constexpr Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>)
+	constexpr Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<value_type>)
+		requires(std::is_move_constructible_v<value_type>)
 		: m_storage(std::nullopt)
 	{
 		m_storage.swap(rhs.m_storage);
 	}
 
+	// Default move constructor is deleted to ensure value_type is move constructible.
+	constexpr Maybe(Maybe&&) = delete;
+
 	/*!
 	 * \brief In place construction.
 	 */
 	template <typename... Args>
-		requires(std::is_constructible_v<T, Args && ...>)
 	constexpr explicit Maybe(std::in_place_t, Args&&... args)
+		requires(std::is_constructible_v<value_type, Args && ...>)
 		: m_storage(std::in_place_type<T>, std::forward<Args>(args)...)
 	{
 	}
@@ -130,8 +134,8 @@ public:
 	 * \brief In place construction with initialisation list.
 	 */
 	template <typename U, typename... Args>
-		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args && ...>)
 	constexpr explicit Maybe(std::in_place_t, std::initializer_list<U> il, Args&&... args)
+		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args && ...>)
 		: m_storage(T(il, std::forward<Args>(args)...))
 	{
 	}
@@ -139,11 +143,11 @@ public:
 	/*!
 	 * \brief Explicit move from value constructor.
 	 */
-	template <typename U = T>
+	template <typename U = std::remove_cvref_t<T>>
+	constexpr explicit Maybe(U&& value)
 		requires(std::is_constructible_v<T, U &&> &&
 				 !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe<T>> && !std::is_convertible_v<U &&, T>)
-	constexpr explicit Maybe(U&& value)
+				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe<T>> && !std::is_convertible_v<U, T>)
 		: m_storage(std::in_place_type<T>, std::forward<U>(value))
 	{
 	}
@@ -151,11 +155,11 @@ public:
 	/*!
 	 * \brief Non-explicit converting move from value constructor.
 	 */
-	template <typename U = T>
-		requires(std::is_constructible_v<T, U &&> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe<T>> && std::is_convertible_v<U &&, T>)
+	template <typename U = std::remove_cv_t<T>>
 	constexpr Maybe(U&& value)
+		requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
+				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe<T>> &&
+				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe<T>> && std::is_convertible_v<U, T>)
 		: m_storage(std::in_place_type<T>, std::forward<U>(value))
 	{
 	}
@@ -164,9 +168,8 @@ public:
 	 * \brief Explicit converting copy constructor.
 	 */
 	template <typename U>
-		requires(std::is_constructible_v<T, U const&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 !std::is_convertible_v<U const&, T>)
 	constexpr explicit Maybe(Maybe<U> const& rhs)
+		requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>>)
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
@@ -177,27 +180,27 @@ public:
 	/*!
 	 * \brief Non-explicit converting copy constructor.
 	 */
-	template <typename U>
-		requires(std::is_constructible_v<T, U const&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 std::is_convertible_v<U const&, T>)
-	constexpr Maybe(Maybe<U> const& rhs)
-		: m_storage(std::nullopt)
-	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage = *val;
-		}
-	}
+	// template <typename U>
+	// 	requires(std::is_constructible_v<T, U const&> && !converts_from_any_cvref<T, Maybe<U>> &&
+	// 			 std::is_convertible_v<U const&, T>)
+	// constexpr Maybe(Maybe<U> const& rhs)
+	// 	: m_storage(std::nullopt)
+	// {
+	// 	if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
+	// 		m_storage = *val;
+	// 	}
+	// }
 
 	/*!
 	 * \brief Explicit converting move constructor.
 	 */
 	template <typename U>
-		requires(std::is_constructible_v<T, U const&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 !std::is_convertible_v<U const&, T>)
 	constexpr explicit Maybe(Maybe<U>&& rhs)
+		requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>>)
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
+			std::ignore = val;
 			m_storage = T(std::get<U>(std::move(rhs.m_storage)));
 			rhs.m_storage = std::nullopt;
 		}
@@ -206,17 +209,16 @@ public:
 	/*!
 	 * \brief Non-explicit converting move constructor.
 	 */
-	template <typename U>
-		requires(std::is_constructible_v<T, U const&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 std::is_convertible_v<U const&, T>)
-	constexpr Maybe(Maybe<U>&& rhs)
-		: m_storage(std::nullopt)
-	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage = std::get<U>(std::move(rhs.m_storage));
-			rhs.m_storage = std::nullopt;
-		}
-	}
+	// template <typename U>
+	// constexpr Maybe(Maybe<U>&& rhs)
+	// 	requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>>)
+	// 	: m_storage(std::nullopt)
+	// {
+	// 	if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
+	// 		m_storage = std::get<U>(std::move(rhs.m_storage));
+	// 		rhs.m_storage = std::nullopt;
+	// 	}
+	// }
 
 	/*!
 	 * @brief Destructor.
@@ -235,15 +237,14 @@ public:
 	/*!
 	 * \brief Copy assignment.
 	 */
-	template <typename U = T>
-		requires(std::is_copy_constructible_v<U> && std::is_copy_assignable_v<U>)
 	constexpr Maybe<T>& operator=(const Maybe& rhs)
+		requires(std::is_copy_constructible_v<value_type> && std::is_copy_assignable_v<value_type>)
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
 				m_storage = rhs.m_storage;
 			} else {
-				m_storage = T(std::get<U>(rhs.m_storage));
+				m_storage = T(std::get<value_type>(rhs.m_storage));
 			}
 		} else {
 			reset();
@@ -251,19 +252,21 @@ public:
 		return *this;
 	}
 
+	// Default copy assignment is deleted to ensure value_type is copy constructible.
+	constexpr Maybe<T>& operator=(const Maybe& rhs) = delete;
+
 	/*!
 	 * \brief Move assignment.
 	 */
-	template <typename U = T>
-		requires(std::is_move_constructible_v<U> && std::is_move_assignable_v<U>)
-	constexpr Maybe<T>& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_assignable_v<U> &&
-														std::is_nothrow_move_constructible_v<U>)
+	constexpr Maybe<T>& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_assignable_v<value_type> &&
+														std::is_nothrow_move_constructible_v<value_type>)
+		requires(std::is_move_constructible_v<value_type> && std::is_move_assignable_v<value_type>)
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
 				m_storage = std::move(rhs.m_storage);
 			} else {
-				m_storage = T(std::get<U>(std::move(rhs.m_storage)));
+				m_storage = T(std::get<value_type>(std::move(rhs.m_storage)));
 			}
 			rhs.reset();
 		} else {
@@ -272,14 +275,17 @@ public:
 		return *this;
 	}
 
+	// Default move assignment is deleted to ensure value_type is move constructible.
+	constexpr Maybe<T>& operator=(Maybe&& rhs) = delete;
+
 	/*!
 	 * \brief Value assignment.
 	 */
-	template <typename U = T>
+	template <typename U = std::remove_cvref_t<T>>
+	constexpr Maybe<T>& operator=(U&& rhs)
 		requires(!std::is_same_v<std::remove_cvref_t<U>, Maybe> &&
 				 !std::conjunction_v<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>> &&
 				 std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>)
-	constexpr Maybe<T>& operator=(U&& rhs)
 	{
 		if (has_value()) {
 			m_storage = std::forward<U>(rhs);
@@ -293,11 +299,11 @@ public:
 	 * \brief Converting copy assignment.
 	 */
 	template <class U>
+	constexpr Maybe<T>& operator=(const Maybe<U>& rhs)
 		requires(std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&> &&
 				 !converts_from_any_cvref<T, Maybe<U>> && !std::is_assignable_v<T&, Maybe<U>&> &&
 				 !std::is_assignable_v<T&, Maybe<U> &&> && !std::is_assignable_v<T&, const Maybe<U>&> &&
 				 !std::is_assignable_v<T&, const Maybe<U> &&>)
-	constexpr Maybe<T>& operator=(const Maybe<U>& rhs)
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
@@ -315,11 +321,11 @@ public:
 	 * \brief Converting move assignment.
 	 */
 	template <class U>
+	constexpr Maybe<T>& operator=(Maybe<U>&& rhs)
 		requires(std::is_constructible_v<T, U> && std::is_assignable_v<T&, U> &&
 				 !converts_from_any_cvref<T, Maybe<U>> && !std::is_assignable_v<T&, Maybe<U>&> &&
 				 !std::is_assignable_v<T&, Maybe<U> &&> && !std::is_assignable_v<T&, const Maybe<U>&> &&
 				 !std::is_assignable_v<T&, const Maybe<U> &&>)
-	constexpr Maybe<T>& operator=(Maybe<U>&& rhs)
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
@@ -338,8 +344,8 @@ public:
 	 * \brief In-place value construction.
 	 */
 	template <class... Args>
-		requires(std::is_constructible_v<T, Args...>)
 	constexpr T& emplace(Args&&... args)
+		requires(std::is_constructible_v<T, Args...>)
 	{
 		m_storage.template emplace<T>(std::forward<Args>(args)...);
 		return std::get<T>(m_storage);
@@ -349,16 +355,16 @@ public:
 	 * \brief In-place value construction with initialisation list.
 	 */
 	template <class U, class... Args>
-		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args...>)
 	constexpr T& emplace(std::initializer_list<U> il, Args&&... args)
+		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args...>)
 	{
 		m_storage.template emplace<T>(il, std::forward<Args>(args)...);
 		return std::get<T>(m_storage);
 	}
 
-	template <typename U = T>
-		requires(std::is_move_constructible_v<U>)
-	constexpr void swap(Maybe& rhs) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_swappable_v<T>)
+	constexpr void swap(Maybe& rhs) noexcept(std::is_nothrow_move_constructible_v<value_type> &&
+											 std::is_nothrow_swappable_v<value_type>)
+		requires(std::is_move_constructible_v<value_type>)
 	{
 		if (has_value()) {
 			if (rhs.has_value()) {
@@ -393,7 +399,7 @@ public:
 	 * \brief Returns either the contained value or the provided default value.
 	 * \param default_value: a fallback value in case the Maybe is empty.
 	 */
-	template <typename U>
+	template <typename U = std::remove_cv_t<T>>
 		requires(std::is_copy_constructible_v<T> && std::is_convertible_v<U &&, T>)
 	[[nodiscard]] constexpr value_type value_or(U&& default_value) &&
 	{
@@ -405,7 +411,7 @@ public:
 	 * \brief Returns either the contained value or the provided default value.
 	 * \param default_value: a fallback value in case the Maybe is empty.
 	 */
-	template <typename U>
+	template <typename U = std::remove_cv_t<T>>
 		requires(std::is_copy_constructible_v<T> && std::is_convertible_v<U &&, T>)
 	[[nodiscard]] constexpr value_type value_or(U&& default_value) const&
 	{
@@ -417,15 +423,15 @@ public:
 	 * \brief Pattern matching type accessor.
 	 */
 	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers)
+		requires(sizeof...(Matchers) >= 1)
 	{
 		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
 
 	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 1)
 	decltype(auto) match(Matchers&&... matchers) const
+		requires(sizeof...(Matchers) >= 1)
 	{
 		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
 	}
@@ -442,7 +448,7 @@ public:
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return U();
+		return std::remove_cv_t<U>();
 	}
 
 	template <class F>
@@ -452,17 +458,17 @@ public:
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return U();
+		return std::remove_cv_t<U>();
 	}
 
 	template <class F>
 	constexpr auto and_then(F&& func) &&
 	{
-		using U = std::remove_cvref_t<std::invoke_result_t<F, T>>;
+		using U = std::remove_cvref_t<std::invoke_result_t<F, T&&>>;
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return U();
+		return std::remove_cv_t<U>();
 	}
 
 	template <class F>
@@ -472,7 +478,7 @@ public:
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return U();
+		return std::remove_cv_t<U>();
 	}
 
 	template <class F>
@@ -488,7 +494,7 @@ public:
 	template <class F>
 	constexpr auto transform(F&& func) const&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+		using U = std::remove_cv_t<std::invoke_result_t<F, const T&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::get<T>(m_storage)));
 		}
@@ -498,7 +504,7 @@ public:
 	template <class F>
 	constexpr auto transform(F&& func) &&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, T>>;
+		using U = std::remove_cv_t<std::invoke_result_t<F, T&&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
 		}
@@ -508,7 +514,7 @@ public:
 	template <class F>
 	constexpr auto transform(F&& func) const&&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, T>>;
+		using U = std::remove_cv_t<std::invoke_result_t<F, const T&&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
 		}
@@ -516,8 +522,8 @@ public:
 	}
 
 	template <class F>
-		requires(std::is_copy_constructible_v<T> && std::is_invocable_v<F>)
 	constexpr Maybe or_else(F&& func) const&
+		requires(std::is_copy_constructible_v<T> && std::is_invocable_v<F>)
 	{
 		if (has_value()) {
 			return *this;
@@ -539,174 +545,174 @@ private:
 	std::variant<T, std::nullopt_t> m_storage = std::nullopt;
 };
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	if (lhs.has_value() != rhs.has_value()) {
-		return false;
-	}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	if (lhs.has_value() != rhs.has_value()) {
+// 		return false;
+// 	}
 
-	if (!lhs.has_value()) {
-		return true;
-	}
+// 	if (!lhs.has_value()) {
+// 		return true;
+// 	}
 
-	return lhs.m_storage == rhs.m_storage;
-}
+// 	return lhs.m_storage == rhs.m_storage;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator!=(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	return !(lhs == rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator!=(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	return !(lhs == rhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	if (!rhs.has_value()) {
-		return false;
-	}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	if (!rhs.has_value()) {
+// 		return false;
+// 	}
 
-	if (!lhs.has_value()) {
-		return true;
-	}
+// 	if (!lhs.has_value()) {
+// 		return true;
+// 	}
 
-	return lhs.m_storage < rhs.m_storage;
-}
+// 	return lhs.m_storage < rhs.m_storage;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	return rhs < lhs;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	return rhs < lhs;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<=(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	return !(lhs > rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<=(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	return !(lhs > rhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>=(const Maybe<T>& lhs, const Maybe<U>& rhs)
-{
-	return !(lhs < rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>=(const Maybe<T>& lhs, const Maybe<U>& rhs)
+// {
+// 	return !(lhs < rhs);
+// }
 
-template <class T>
-[[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
-{
-	std::ignore = rhs;
-	return !lhs.has_value();
-}
+// template <class T>
+// [[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
+// {
+// 	std::ignore = rhs;
+// 	return !lhs.has_value();
+// }
 
-template <class T>
-[[nodiscard]] constexpr std::strong_ordering operator<=>(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
-{
-	std::ignore = rhs;
-	return lhs.has_value() <=> false;
-}
+// template <class T>
+// [[nodiscard]] constexpr std::strong_ordering operator<=>(const Maybe<T>& lhs, std::nullopt_t rhs) noexcept
+// {
+// 	std::ignore = rhs;
+// 	return lhs.has_value() <=> false;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, const U& rhs)
-{
-	return lhs.has_value() ? lhs.m_storage == rhs : false;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator==(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return lhs.has_value() ? lhs.m_storage == rhs : false;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator==(const T& lhs, const Maybe<U>& rhs)
-{
-	return rhs == lhs;
-}
-template <class T, class U>
-[[nodiscard]] constexpr bool operator!=(const Maybe<T>& lhs, const U& rhs)
-{
-	return !(lhs == rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator==(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return rhs == lhs;
+// }
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator!=(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return !(lhs == rhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator!=(const T& lhs, const Maybe<U>& rhs)
-{
-	return rhs != lhs;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator!=(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return rhs != lhs;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<(const Maybe<T>& lhs, const U& rhs)
-{
-	return lhs.has_value() ? lhs.m_storage < rhs : true;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return lhs.has_value() ? lhs.m_storage < rhs : true;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<(const T& lhs, const Maybe<U>& rhs)
-{
-	return rhs.has_value() ? rhs.m_storage < lhs : true;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return rhs.has_value() ? rhs.m_storage < lhs : true;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>(const Maybe<T>& lhs, const U& rhs)
-{
-	return rhs < lhs;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return rhs < lhs;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>(const T& lhs, const Maybe<U>& rhs)
-{
-	return rhs < lhs;
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return rhs < lhs;
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<=(const Maybe<T>& lhs, const U& rhs)
-{
-	return !(rhs < lhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<=(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return !(rhs < lhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator<=(const T& lhs, const Maybe<U>& rhs)
-{
-	return !(rhs < lhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator<=(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return !(rhs < lhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>=(const Maybe<T>& lhs, const U& rhs)
-{
-	return !(lhs < rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>=(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return !(lhs < rhs);
+// }
 
-template <class T, class U>
-[[nodiscard]] constexpr bool operator>=(const T& lhs, const Maybe<U>& rhs)
-{
-	return !(lhs < rhs);
-}
+// template <class T, class U>
+// [[nodiscard]] constexpr bool operator>=(const T& lhs, const Maybe<U>& rhs)
+// {
+// 	return !(lhs < rhs);
+// }
 
-template <class T, class U>
-	requires(!is_derived_from_maybe<U>) && std::three_way_comparable_with<T, U>
-[[nodiscard]] constexpr std::compare_three_way_result_t<T, U> operator<=>(const Maybe<T>& lhs, const U& rhs)
-{
-	return lhs.has_value() ? lhs.m_storage <=> rhs : std::strong_ordering::less;
-}
+// template <class T, class U>
+// 	requires(!is_derived_from_maybe<U>) && std::three_way_comparable_with<T, U>
+// [[nodiscard]] constexpr std::compare_three_way_result_t<T, U> operator<=>(const Maybe<T>& lhs, const U& rhs)
+// {
+// 	return lhs.has_value() ? lhs.m_storage <=> rhs : std::strong_ordering::less;
+// }
 
-template <class T>
-constexpr void swap(Maybe<T>& lhs, Maybe<T>& rhs) noexcept(noexcept(lhs.swap(rhs)))
-	requires(std::is_move_constructible_v<T> && std::is_swappable_v<T>)
-{
-	lhs.swap(rhs);
-}
+// template <class T>
+// constexpr void swap(Maybe<T>& lhs, Maybe<T>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+// 	requires(std::is_move_constructible_v<T> && std::is_swappable_v<T>)
+// {
+// 	lhs.swap(rhs);
+// }
 
-template <class T>
-[[nodiscard]] constexpr Maybe<std::decay_t<T>> make_maybe(T&& value)
-{
-	return Maybe<std::decay_t<T>>(std::forward<T>(value));
-}
+// template <class T>
+// [[nodiscard]] constexpr Maybe<std::decay_t<T>> make_maybe(T&& value)
+// {
+// 	return Maybe<std::decay_t<T>>(std::forward<T>(value));
+// }
 
-template <class T, class... Args>
-[[nodiscard]] constexpr Maybe<T> make_maybe(Args&&... args)
-{
-	return Maybe<T>(std::in_place, std::forward<Args>(args)...);
-}
+// template <class T, class... Args>
+// [[nodiscard]] constexpr Maybe<T> make_maybe(Args&&... args)
+// {
+// 	return Maybe<T>(std::in_place, std::forward<Args>(args)...);
+// }
 
-template <class T, class U, class... Args>
-[[nodiscard]] constexpr Maybe<T> make_maybe(std::initializer_list<U> il, Args&&... args)
-{
-	return Maybe<T>(std::in_place, il, std::forward<Args>(args)...);
-}
+// template <class T, class U, class... Args>
+// [[nodiscard]] constexpr Maybe<T> make_maybe(std::initializer_list<U> il, Args&&... args)
+// {
+// 	return Maybe<T>(std::in_place, il, std::forward<Args>(args)...);
+// }
 }  // namespace libecl
 
 #endif
