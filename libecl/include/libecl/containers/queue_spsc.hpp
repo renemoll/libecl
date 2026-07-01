@@ -232,14 +232,14 @@ private:
 	std::array<AlignedStorage<value_type>, N + 1> m_storage = {};
 
 #if defined(__cpp_lib_hardware_interference_size) && (__cpp_lib_hardware_interference_size >= 201603L)
-#ifdef BOB_COMPILER_GCC
+#if BOB_COMPILER_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winterference-size"
 #endif
 
 	constexpr static std::size_t padding_size = std::hardware_destructive_interference_size;
 
-#ifdef BOB_COMPILER_GCC
+#if BOB_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif
 #else
