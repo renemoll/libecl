@@ -1285,7 +1285,7 @@ SCENARIO("Maybe: monadic operations")
 			}
 		}
 
-		WHEN("calling transform")
+		WHEN("calling transform on a lvalue Maybe")
 		{
 			auto int_to_string = [](int value) { return std::to_string(value); };
 			auto result = dut.transform(int_to_string);
@@ -1297,16 +1297,97 @@ SCENARIO("Maybe: monadic operations")
 				CHECK(dut.has_value());
 				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
 			}
+
+			dut.reset();
+			result = dut.transform(int_to_string);
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(dut.has_value());
+			}
 		}
 
-		WHEN("calling or_else")
+		WHEN("calling transform on an rvalue Maybe")
 		{
-			auto fallback = []() { return Maybe<int>(0); };
+			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto result = std::move(dut).transform(int_to_string);
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+
+			auto empty = Maybe<int>{};
+			result = std::move(empty).transform(int_to_string);
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(empty.has_value());
+			}
+		}
+
+		WHEN("calling transform on a const lvalue Maybe")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto result = const_dut.transform(int_to_string);
+			THEN("the result is a Maybe with the transformed value and the source is unchanged")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+				CHECK(const_dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+
+			const Maybe<int> const_empty{};
+			result = const_empty.transform(int_to_string);
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_empty.has_value());
+			}
+		}
+
+		WHEN("calling transform on a const rvalue Maybe")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto result = std::move(const_dut).transform(int_to_string);
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+			}
+
+			const Maybe<int> const_empty{};
+			result = std::move(const_empty).transform(int_to_string);
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_empty.has_value());
+			}
+		}
+
+		WHEN("calling or_else on a lvalue Maybe")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
+
 			auto result = dut.or_else(fallback);
 			THEN("the result is the original Maybe")
 			{
 				CHECK(result.has_value());
 				CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+				CHECK_FALSE(fallback_called);
 				CHECK(dut.has_value());
 				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
 			}
@@ -1317,7 +1398,102 @@ SCENARIO("Maybe: monadic operations")
 			{
 				CHECK(result.has_value());
 				CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
+				CHECK(fallback_called);
 				CHECK_FALSE(dut.has_value());
+			}
+		}
+
+		WHEN("calling or_else on an rvalue Maybe")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
+
+			auto result = std::move(dut).or_else(fallback);
+			THEN("the result is the original Maybe and fallback is not used")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+				CHECK_FALSE(fallback_called);
+				CHECK_FALSE(dut.has_value());
+			}
+
+			auto empty = Maybe<int>{};
+			result = std::move(empty).or_else(fallback);
+			THEN("the fallback is used for an empty rvalue Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
+				CHECK(fallback_called);
+				CHECK_FALSE(empty.has_value());
+			}
+		}
+	}
+
+	GIVEN("an empty Maybe")
+	{
+		Maybe<int> dut;
+
+		WHEN("calling and_then")
+		{
+			bool called = false;
+			auto result = dut.and_then([&called](int value) {
+				called = true;
+				return Maybe<std::string>(std::to_string(value));
+			});
+
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+			}
+		}
+
+		WHEN("calling transform")
+		{
+			bool called = false;
+			auto result = dut.transform([&called](int value) {
+				called = true;
+				return std::to_string(value);
+			});
+
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+			}
+		}
+	}
+}
+
+SCENARIO("Maybe: value_or exception behaviour")
+{
+	GIVEN("a const Maybe containing a type that throws on copy")
+	{
+		const Maybe<ThrowOnCopy> dut{ThrowOnCopy{5}};
+
+		WHEN("calling value_or on const&")
+		{
+			THEN("copying the stored value throws")
+			{
+				CHECK_THROWS_AS(std::ignore = dut.value_or(ThrowOnCopy{6}), std::runtime_error);
+			}
+		}
+	}
+
+	GIVEN("an empty const Maybe with fallback value")
+	{
+		const Maybe<ThrowOnCopy> dut{std::nullopt};
+
+		WHEN("calling value_or on const&")
+		{
+			auto result = dut.value_or(ThrowOnCopy{6});
+
+			THEN("the fallback is returned")
+			{
+				CHECK(result.m_value == 6);
 			}
 		}
 	}
