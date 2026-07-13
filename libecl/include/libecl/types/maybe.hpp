@@ -175,7 +175,7 @@ public:
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage = T(*val);
+			m_storage.template emplace<value_type>(*val);
 		}
 	}
 
@@ -189,7 +189,7 @@ public:
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage = *val;
+			m_storage.template emplace<value_type>(*val);
 		}
 	}
 
@@ -203,7 +203,7 @@ public:
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
 			std::ignore = val;
-			m_storage = T(std::get<U>(std::move(rhs.m_storage)));
+			m_storage.template emplace<value_type>(std::get<U>(std::move(rhs.m_storage)));
 			rhs.m_storage = std::nullopt;
 		}
 	}
@@ -218,7 +218,7 @@ public:
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
 			std::ignore = val;
-			m_storage = std::get<U>(std::move(rhs.m_storage));
+			m_storage.template emplace<value_type>(std::get<U>(std::move(rhs.m_storage)));
 			rhs.m_storage = std::nullopt;
 		}
 	}
@@ -314,9 +314,9 @@ public:
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
-				m_storage = *rhs.m_storage;
+				std::get<value_type>(m_storage) = std::get<U>(rhs.m_storage);
 			} else {
-				m_storage = T(*rhs.m_storage);
+				m_storage = T(std::get<U>(rhs.m_storage));
 			}
 		} else {
 			reset();
@@ -336,9 +336,9 @@ public:
 	{
 		if (rhs.has_value()) {
 			if (has_value()) {
-				m_storage = std::move(*rhs.m_storage);
+				std::get<value_type>(m_storage) = std::get<U>(std::move(rhs.m_storage));
 			} else {
-				m_storage = T(std::move(*rhs.m_storage));
+				m_storage = T(std::get<U>(std::move(rhs.m_storage)));
 			}
 			rhs.reset();
 		} else {
@@ -381,11 +381,13 @@ public:
 			if (rhs.has_value()) {
 				std::swap(m_storage, rhs.m_storage);
 			} else {
-				rhs.m_storage = std::move(m_storage);
+				// rhs.m_storage = std::move(m_storage);
+				std::swap(m_storage, rhs.m_storage);
 				reset();
 			}
 		} else if (rhs.has_value()) {
-			m_storage = std::move(rhs.m_storage);
+			// m_storage = std::move(rhs.m_storage);
+			std::swap(m_storage, rhs.m_storage);
 			rhs.reset();
 		}
 	}

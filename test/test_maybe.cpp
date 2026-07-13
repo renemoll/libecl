@@ -9,8 +9,6 @@
 
 #include "libecl/types/maybe.hpp"
 
-// #include <cstdint>
-// #include <type_traits>
 #include <string>
 
 #include "catch2/catch_test_macros.hpp"
@@ -26,64 +24,9 @@ enum Method
 	ValueConstructed,
 	MovedFrom,
 	CopyAssigned,
+	ValueAssigned,
 	MoveAssigned,
 };
-
-// class Implicit
-// {
-// public:
-// 	Implicit()
-// 		: m_value{42}
-// 		, m_method{Method::DefaultConstructed}
-// 	{
-// 	}
-
-// 	Implicit(int value)
-// 		: m_value{value}
-// 		, m_method{Method::ValueConstructed}
-// 	{
-// 	}
-
-// 	Implicit(Implicit const& rhs)
-// 		: m_value(rhs.m_value)
-// 		, m_method(Method::CopyConstructed)
-// 	{
-// 	}
-
-// 	Implicit& operator=(Implicit const& rhs)
-// 	{
-// 		m_value = rhs.m_value;
-// 		m_method = Method::CopyAssigned;
-// 		return *this;
-// 	}
-
-// 	Implicit(Implicit&& rhs) noexcept
-// 		: m_value(rhs.m_value)
-// 		, m_method(Method::MoveConstructed)
-// 	{
-// 		rhs.m_method = Method::MovedFrom;
-// 	}
-
-// 	Implicit& operator=(Implicit&& rhs) noexcept
-// 	{
-// 		m_value = rhs.m_value;
-// 		m_method = Method::MoveAssigned;
-// 		rhs.m_method = Method::MovedFrom;
-// 		return *this;
-// 	}
-
-// 	int m_value;
-// 	Method m_method;
-// };
-
-// static_assert(!std::is_trivially_constructible_v<Implicit>);
-// static_assert(!std::is_trivially_copyable_v<Implicit>);
-// static_assert(!std::is_trivially_move_constructible_v<Implicit>);
-// static_assert(std::is_default_constructible_v<Implicit>);
-// static_assert(std::is_copy_constructible_v<Implicit>);
-// static_assert(std::is_copy_assignable_v<Implicit>);
-// static_assert(std::is_move_constructible_v<Implicit>);
-// static_assert(std::is_move_assignable_v<Implicit>);
 
 class DefaultConstructible
 {
@@ -109,29 +52,12 @@ public:
 	{
 	}
 
-	DefaultConstructible& operator=(DefaultConstructible const& rhs)
-	{
-		m_value = rhs.m_value;
-		m_method = Method::CopyAssigned;
-		m_string = rhs.m_string;
-		return *this;
-	}
-
 	DefaultConstructible(DefaultConstructible&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 		, m_string(std::move(rhs.m_string))
 	{
 		rhs.m_method = Method::MovedFrom;
-	}
-
-	DefaultConstructible& operator=(DefaultConstructible&& rhs) noexcept
-	{
-		m_value = rhs.m_value;
-		m_method = Method::MoveAssigned;
-		m_string = std::move(rhs.m_string);
-		rhs.m_method = Method::MovedFrom;
-		return *this;
 	}
 
 	int m_value;
@@ -144,9 +70,48 @@ static_assert(!std::is_trivially_copyable_v<DefaultConstructible>);
 static_assert(!std::is_trivially_move_constructible_v<DefaultConstructible>);
 static_assert(std::is_default_constructible_v<DefaultConstructible>);
 static_assert(std::is_copy_constructible_v<DefaultConstructible>);
-static_assert(std::is_copy_assignable_v<DefaultConstructible>);
+static_assert(!std::is_copy_assignable_v<DefaultConstructible>);
 static_assert(std::is_move_constructible_v<DefaultConstructible>);
-static_assert(std::is_move_assignable_v<DefaultConstructible>);
+static_assert(!std::is_move_assignable_v<DefaultConstructible>);
+
+class DefaultAssignable : public DefaultConstructible
+{
+public:
+	DefaultAssignable(int value)
+		: DefaultConstructible(value)
+	{
+	}
+
+	DefaultAssignable(DefaultAssignable const& rhs) = default;
+	DefaultAssignable(DefaultAssignable&& rhs) noexcept = default;
+
+	DefaultAssignable& operator=(int value)
+	{
+		m_value = value;
+		m_method = Method::ValueAssigned;
+		return *this;
+	}
+
+	DefaultAssignable& operator=(DefaultAssignable const& rhs)
+	{
+		m_value = rhs.m_value;
+		m_method = Method::CopyAssigned;
+		m_string = rhs.m_string;
+		return *this;
+	}
+
+	DefaultAssignable& operator=(DefaultAssignable&& rhs) noexcept
+	{
+		m_value = rhs.m_value;
+		m_method = Method::MoveAssigned;
+		m_string = std::move(rhs.m_string);
+		rhs.m_method = Method::MovedFrom;
+		return *this;
+	}
+};
+
+static_assert(std::is_copy_assignable_v<DefaultAssignable>);
+static_assert(std::is_move_assignable_v<DefaultAssignable>);
 
 class NonDefaultConstructible
 {
@@ -165,29 +130,12 @@ public:
 	{
 	}
 
-	NonDefaultConstructible& operator=(NonDefaultConstructible const& rhs)
-	{
-		m_value = rhs.m_value;
-		m_method = Method::CopyAssigned;
-		m_string = rhs.m_string;
-		return *this;
-	}
-
 	NonDefaultConstructible(NonDefaultConstructible&& rhs) noexcept
 		: m_value(rhs.m_value)
 		, m_method(Method::MoveConstructed)
 		, m_string(std::move(rhs.m_string))
 	{
 		rhs.m_method = Method::MovedFrom;
-	}
-
-	NonDefaultConstructible& operator=(NonDefaultConstructible&& rhs) noexcept
-	{
-		m_value = rhs.m_value;
-		m_method = Method::MoveAssigned;
-		m_string = std::move(rhs.m_string);
-		rhs.m_method = Method::MovedFrom;
-		return *this;
 	}
 
 	int m_value;
@@ -200,9 +148,48 @@ static_assert(!std::is_trivially_copyable_v<NonDefaultConstructible>);
 static_assert(!std::is_trivially_move_constructible_v<NonDefaultConstructible>);
 static_assert(!std::is_default_constructible_v<NonDefaultConstructible>);
 static_assert(std::is_copy_constructible_v<NonDefaultConstructible>);
-static_assert(std::is_copy_assignable_v<NonDefaultConstructible>);
+static_assert(!std::is_copy_assignable_v<NonDefaultConstructible>);
 static_assert(std::is_move_constructible_v<NonDefaultConstructible>);
-static_assert(std::is_move_assignable_v<NonDefaultConstructible>);
+static_assert(!std::is_move_assignable_v<NonDefaultConstructible>);
+
+class NonDefaultAssignable : public NonDefaultConstructible
+{
+public:
+	explicit NonDefaultAssignable(int value)
+		: NonDefaultConstructible(value)
+	{
+	}
+
+	NonDefaultAssignable(NonDefaultAssignable const& rhs) = default;
+	NonDefaultAssignable(NonDefaultAssignable&& rhs) noexcept = default;
+
+	NonDefaultAssignable& operator=(int value)
+	{
+		m_value = value;
+		m_method = Method::ValueAssigned;
+		return *this;
+	}
+
+	NonDefaultAssignable& operator=(NonDefaultAssignable const& rhs)
+	{
+		m_value = rhs.m_value;
+		m_method = Method::CopyAssigned;
+		m_string = rhs.m_string;
+		return *this;
+	}
+
+	NonDefaultAssignable& operator=(NonDefaultAssignable&& rhs) noexcept
+	{
+		m_value = rhs.m_value;
+		m_method = Method::MoveAssigned;
+		m_string = std::move(rhs.m_string);
+		rhs.m_method = Method::MovedFrom;
+		return *this;
+	}
+};
+
+static_assert(std::is_copy_assignable_v<NonDefaultAssignable>);
+static_assert(std::is_move_assignable_v<NonDefaultAssignable>);
 
 class NonCopyable
 {
@@ -405,7 +392,7 @@ SCENARIO("Maybe: constructors")
 		Maybe<NonMovable> dut_no_move{};
 		Maybe<NonCopyableNonMovable> dut_no_copy_no_move{};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(dut.has_value());
 			CHECK_FALSE(dut_default.has_value());
@@ -425,7 +412,7 @@ SCENARIO("Maybe: constructors")
 		Maybe<NonMovable> dut_no_move{std::nullopt};
 		Maybe<NonCopyableNonMovable> dut_no_copy_no_move{std::nullopt};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(dut.has_value());
 			CHECK_FALSE(dut_default.has_value());
@@ -470,7 +457,7 @@ SCENARIO("Maybe: constructors")
 		const Maybe<NonDefaultConstructible> dut_no_default_empty{std::nullopt};
 		const Maybe<NonDefaultConstructible> dut_no_default_copy{dut_no_default_empty};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(dut_copy.has_value());
 			CHECK_FALSE(dut_default_copy.has_value());
@@ -479,7 +466,7 @@ SCENARIO("Maybe: constructors")
 		}
 	}
 
-	WHEN("copy constructing from an non-empty Maybe")
+	WHEN("copy constructing from a non-empty Maybe")
 	{
 		Maybe<int> dut_value{42};
 		Maybe<int> dut_copy{dut_value};
@@ -549,7 +536,7 @@ SCENARIO("Maybe: constructors")
 		Maybe<NonDefaultConstructible> dut_no_default_empty{std::nullopt};
 		Maybe<NonDefaultConstructible> dut_no_default{std::move(dut_no_default_empty)};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(dut_empty.has_value());
 			CHECK_FALSE(dut.has_value());
@@ -636,7 +623,7 @@ SCENARIO("Maybe: constructors")
 		Maybe<DefaultConstructible> dut_default{empty_Maybe};
 		const Maybe<NonDefaultConstructible> dut_no_default{empty_Maybe};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(empty_Maybe.has_value());
 			CHECK_FALSE(dut_default.has_value());
@@ -644,7 +631,7 @@ SCENARIO("Maybe: constructors")
 		}
 	}
 
-	WHEN("converting copy construction from an non-empty-Maybe")
+	WHEN("converting copy construction from a non-empty-Maybe")
 	{
 		Maybe<int> dut_value{42};
 		Maybe<DefaultConstructible> dut_default{dut_value};
@@ -704,7 +691,7 @@ SCENARIO("Maybe: constructors")
 		Maybe<int> dut_no_default_empty{std::nullopt};
 		const Maybe<NonDefaultConstructible> dut_no_default{std::move(dut_no_default_empty)};
 
-		THEN("the Maybes are empty")
+		THEN("both Maybes are empty")
 		{
 			CHECK_FALSE(dut_default_empty.has_value());
 			CHECK_FALSE(dut_default.has_value());
@@ -713,7 +700,7 @@ SCENARIO("Maybe: constructors")
 		}
 	}
 
-	WHEN("converting move constructing an non-empty Maybe")
+	WHEN("converting move constructing a non-empty Maybe")
 	{
 		Maybe<int> dut_default_value{33};
 		Maybe<DefaultConstructible> dut_default1{std::move(dut_default_value)};
@@ -831,103 +818,79 @@ SCENARIO("Maybe: constructors")
 	}
 }
 
-SCENARIO("Maybe: assignments")
+SCENARIO("Maybe: assignment")
 {
-	GIVEN("nullopt assignment")
+	WHEN("nullopt assignment")
 	{
 		Maybe<int> dut_empty;
 		Maybe<int> dut_value(42);
 
-		WHEN("assigning nullopt")
-		{
-			dut_empty = std::nullopt;
-			dut_value = std::nullopt;
+		dut_empty = std::nullopt;
+		dut_value = std::nullopt;
 
-			THEN("the Maybes are empty")
-			{
-				CHECK_FALSE(dut_empty.has_value());
-				CHECK_FALSE(dut_value.has_value());
-			}
+		THEN("both Maybes are empty")
+		{
+			CHECK_FALSE(dut_empty.has_value());
+			CHECK_FALSE(dut_value.has_value());
 		}
 	}
 
-	GIVEN("copy assignment from another Maybe")
+	WHEN("copy assignment from an empty Maybe")
 	{
-		Maybe<DefaultConstructible> dut_empty_lhs;
-		Maybe<DefaultConstructible> dut_empty_rhs;
-		Maybe<DefaultConstructible> dut_value_lhs(42);
-		Maybe<DefaultConstructible> dut_value_rhs(33);
+		Maybe<DefaultAssignable> dut_empty_lhs;
+		Maybe<DefaultAssignable> dut_value_lhs(42);
 
-		WHEN("lhs has a value, rhs has a value")
+		Maybe<DefaultAssignable> dut_empty_rhs;
+
+		dut_empty_lhs = dut_empty_rhs;
+		dut_value_lhs = dut_empty_rhs;
+
+		THEN("both Maybes are empty")
 		{
-			dut_value_lhs = dut_value_rhs;
-
-			THEN("the Maybes hold the same value")
-			{
-				dut_value_lhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::CopyAssigned);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-				dut_value_rhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::ValueConstructed);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-			}
-		}
-
-		WHEN("lhs has a value, rhs is empty")
-		{
-			dut_value_lhs = dut_empty_rhs;
-
-			THEN("the Maybes are empty")
-			{
-				CHECK_FALSE(dut_value_lhs.has_value());
-				CHECK_FALSE(dut_empty_rhs.has_value());
-			}
-		}
-
-		WHEN("lhs is empty, rhs has a value")
-		{
-			dut_empty_lhs = dut_value_rhs;
-
-			THEN("the Maybes hold the same value")
-			{
-				dut_empty_lhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						// Note: copy constructor creates a copy which is moved into the storage
-						CHECK(wrap.m_method == Method::MoveConstructed);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-				dut_value_rhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::ValueConstructed);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-			}
-		}
-
-		WHEN("lhs is empty, rhs is empty")
-		{
-			dut_empty_lhs = dut_empty_rhs;
-
-			THEN("the Maybes are empty")
-			{
-				CHECK_FALSE(dut_empty_lhs.has_value());
-				CHECK_FALSE(dut_empty_rhs.has_value());
-			}
+			CHECK_FALSE(dut_empty_lhs.has_value());
+			CHECK_FALSE(dut_value_lhs.has_value());
+			CHECK_FALSE(dut_empty_rhs.has_value());
 		}
 	}
 
-	GIVEN("copy assignment from a value")
+	WHEN("copy assignment from a non-empty Maybe")
+	{
+		Maybe<DefaultAssignable> dut_empty_lhs;
+		Maybe<DefaultAssignable> dut_value_lhs(42);
+
+		const Maybe<DefaultAssignable> dut_value_rhs(33);
+
+		dut_empty_lhs = dut_value_rhs;
+		dut_value_lhs = dut_value_rhs;
+
+		THEN("the Maybes hold the same value (rhs)")
+		{
+			dut_empty_lhs.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 33);
+					// Note: copy constructor creates a copy which is moved into the storage
+					CHECK(wrap.m_method == Method::MoveConstructed);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+			dut_value_lhs.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 33);
+					CHECK(wrap.m_method == Method::CopyAssigned);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+			dut_value_rhs.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 33);
+					CHECK(wrap.m_method == Method::ValueConstructed);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+		}
+	}
+
+	WHEN("copy assignment from a value")
 	{
 		Maybe<int> dut1;
-		Maybe<int> dut2;
+		Maybe<int> dut2 = 1;
 
 		dut1 = 42;
 		const int value = 101;
@@ -940,83 +903,242 @@ SCENARIO("Maybe: assignments")
 		}
 	}
 
-	GIVEN("move assignment from another Maybe")
+	WHEN("move assignment from an empty Maybe")
 	{
-		Maybe<DefaultConstructible> dut_empty_lhs;
-		Maybe<DefaultConstructible> dut_empty_rhs;
-		Maybe<DefaultConstructible> dut_value_lhs(42);
-		Maybe<DefaultConstructible> dut_value_rhs(33);
+		Maybe<DefaultAssignable> dut_empty_lhs;
+		Maybe<DefaultAssignable> dut_value_lhs(42);
 
-		WHEN("lhs has a value, rhs has a value")
+		Maybe<DefaultAssignable> dut_empty_rhs1;
+		Maybe<DefaultAssignable> dut_empty_rhs2;
+
+		dut_empty_lhs = std::move(dut_empty_rhs1);
+		dut_value_lhs = std::move(dut_empty_rhs2);
+
+		THEN("both Maybes are empty")
 		{
-			dut_value_lhs = std::move(dut_value_rhs);
-
-			THEN("the Maybes hold the same value")
-			{
-				dut_value_lhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::MoveAssigned);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-				CHECK_FALSE(dut_value_rhs.has_value());
-			}
-		}
-
-		WHEN("lhs has a value, rhs is empty")
-		{
-			dut_value_lhs = std::move(dut_empty_rhs);
-
-			THEN("the Maybes are empty")
-			{
-				CHECK_FALSE(dut_value_lhs.has_value());
-				CHECK_FALSE(dut_empty_rhs.has_value());
-			}
-		}
-
-		WHEN("lhs is empty, rhs has a value")
-		{
-			dut_empty_lhs = std::move(dut_value_rhs);
-
-			THEN("the Maybes hold the same value")
-			{
-				dut_empty_lhs.match(
-					[](const DefaultConstructible& wrap) {
-						CHECK(wrap.m_value == 33);
-						CHECK(wrap.m_method == Method::MoveConstructed);
-					},
-					[](std::nullopt_t) { CHECK(false); });
-				CHECK_FALSE(dut_value_rhs.has_value());
-			}
-		}
-
-		WHEN("lhs is empty, rhs is empty")
-		{
-			dut_empty_lhs = std::move(dut_empty_rhs);
-
-			THEN("the Maybes are empty")
-			{
-				CHECK_FALSE(dut_empty_lhs.has_value());
-				CHECK_FALSE(dut_empty_rhs.has_value());
-			}
+			CHECK_FALSE(dut_empty_lhs.has_value());
+			CHECK_FALSE(dut_empty_rhs1.has_value());
+			CHECK_FALSE(dut_value_lhs.has_value());
+			CHECK_FALSE(dut_empty_rhs2.has_value());
 		}
 	}
 
-	GIVEN("move assignment from a value")
+	WHEN("move assignment from a non-empty Maybe")
 	{
-		DefaultConstructible value{101};
-		Maybe<DefaultConstructible> dut = std::move(value);
+		Maybe<DefaultAssignable> dut_empty_lhs;
+		Maybe<DefaultAssignable> dut_value_lhs(42);
 
-		THEN("the Maybes contains the value")
+		Maybe<DefaultAssignable> dut_value_rhs1(33);
+		Maybe<DefaultAssignable> dut_value_rhs2(44);
+
+		dut_empty_lhs = std::move(dut_value_rhs1);
+		dut_value_lhs = std::move(dut_value_rhs2);
+
+		THEN("lhs holds the value and rhs is empty")
+		{
+			dut_empty_lhs.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 33);
+					CHECK(wrap.m_method == Method::MoveConstructed);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+
+			dut_value_lhs.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 44);
+					CHECK(wrap.m_method == Method::MoveAssigned);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+
+			CHECK_FALSE(dut_value_rhs1.has_value());
+			CHECK_FALSE(dut_value_rhs2.has_value());
+		}
+	}
+
+	WHEN("move assignment from a value")
+	{
+		DefaultAssignable value{101};
+		Maybe<DefaultAssignable> dut = std::move(value);
+
+		THEN("the Maybe contains the value")
 		{
 			dut.match(
-				[](const DefaultConstructible& wrap) {
+				[](const DefaultAssignable& wrap) {
 					CHECK(wrap.m_value == 101);
 					CHECK(wrap.m_method == Method::MoveConstructed);
 				},
 				[](std::nullopt_t) { CHECK(false); });
+			CHECK(value.m_method == Method::MovedFrom);
 		}
 	}
+
+	WHEN("converting copy assignment from an empty-Maybe")
+	{
+		Maybe<DefaultAssignable> dut_default;
+		Maybe<NonDefaultAssignable> dut_no_default(11);
+
+		const Maybe<int> empty_Maybe{std::nullopt};
+		dut_default = empty_Maybe;
+		dut_no_default = empty_Maybe;
+
+		THEN("both Maybes are empty")
+		{
+			CHECK_FALSE(empty_Maybe.has_value());
+			CHECK_FALSE(dut_default.has_value());
+			CHECK_FALSE(dut_no_default.has_value());
+		}
+	}
+
+	WHEN("converting copy assignment from a non-empty-Maybe")
+	{
+		Maybe<DefaultAssignable> dut_default;
+		Maybe<NonDefaultAssignable> dut_no_default(11);
+
+		const Maybe<int> dut_value{42};
+		dut_default = dut_value;
+		dut_no_default = dut_value;
+
+		THEN("the Maybes contains the value")
+		{
+			CHECK(dut_value.match([](int val) { return val == 42; }, [](std::nullopt_t) { return false; }));
+			dut_default.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 42);
+					// Note: copy constructor creates a new DefaultConstructible which is moved into the storage
+					CHECK(wrap.m_method == Method::MoveConstructed);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+			dut_no_default.match(
+				[](const NonDefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 42);
+					CHECK(wrap.m_method == Method::ValueAssigned);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+		}
+	}
+
+	WHEN("converting copy assignment from a value")
+	{
+		Maybe<DefaultAssignable> dut_default;
+		Maybe<NonDefaultAssignable> dut_no_default(11);
+
+		const char forty_two = '*';
+		const Maybe<int> dut{forty_two};
+		dut_default = dut;
+		dut_no_default = dut;
+
+		THEN("the Maybes contains the value")
+		{
+			dut.match([](int val) { CHECK(val == 42); }, [](std::nullopt_t) { CHECK(false); });
+			dut_default.match(
+				[](const DefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 42);
+					// Note: copy assignment creates a new DefaultConstructible which is moved into the storage
+					CHECK(wrap.m_method == Method::MoveConstructed);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+			dut_no_default.match(
+				[](const NonDefaultAssignable& wrap) {
+					CHECK(wrap.m_value == 42);
+					CHECK(wrap.m_method == Method::ValueAssigned);
+				},
+				[](std::nullopt_t) { CHECK(false); });
+		}
+	}
+
+	WHEN("converting move assignment from an empty Maybe")
+	{
+		Maybe<DefaultAssignable> dut_default;
+		Maybe<NonDefaultAssignable> dut_no_default(11);
+
+		Maybe<int> dut_default_empty{std::nullopt};
+		const Maybe<int> dut_no_default_empty{std::nullopt};
+		dut_default = std::move(dut_default_empty);
+		dut_no_default = std::move(dut_no_default_empty);
+
+		THEN("both Maybes are empty")
+		{
+			CHECK_FALSE(dut_default_empty.has_value());
+			CHECK_FALSE(dut_default.has_value());
+			CHECK_FALSE(dut_no_default_empty.has_value());
+			CHECK_FALSE(dut_no_default.has_value());
+		}
+	}
+
+	// WHEN("converting move constructing a non-empty Maybe")
+	// {
+	// 	Maybe<int> dut_default_value{33};
+	// 	Maybe<DefaultConstructible> dut_default1{std::move(dut_default_value)};
+	// 	Maybe<int> dut_no_default_empty{42};
+	// 	Maybe<NonDefaultConstructible> dut_no_default1{std::move(dut_no_default_empty)};
+
+	// 	const int default_value = 34;
+	// 	Maybe<DefaultConstructible> dut_default2{std::move(default_value)};
+	// 	const int no_default_value = 43;
+	// 	Maybe<NonDefaultConstructible> dut_no_default2{std::move(no_default_value)};
+
+	// 	THEN("the Maybes contain the value, the sources are empty")
+	// 	{
+	// 		CHECK(dut_default_value.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
+	// 		dut_default1.match(
+	// 			[](const DefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 33);
+	// 				CHECK(wrap.m_method == Method::MoveConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+	// 		CHECK(dut_no_default_empty.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
+	// 		dut_no_default1.match(
+	// 			[](const NonDefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 42);
+	// 				CHECK(wrap.m_method == Method::MoveConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+	// 		dut_default2.match(
+	// 			[](const DefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 34);
+	// 				CHECK(wrap.m_method == Method::ValueConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+	// 		dut_no_default2.match(
+	// 			[](const NonDefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 43);
+	// 				CHECK(wrap.m_method == Method::ValueConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+	// 	}
+	// }
+
+	// WHEN("converting move constructing from a value")
+	// {
+	// 	DefaultConstructible default_value{66};
+	// 	Maybe<DefaultConstructible> dut_default(std::move(default_value));
+	// 	NonDefaultConstructible no_default_value{77};
+	// 	const Maybe<NonDefaultConstructible> dut_no_default(std::move(no_default_value));
+
+	// 	THEN("the Maybes contain the value, the source is empty")
+	// 	{
+	// 		CHECK(default_value.m_method == Method::MovedFrom);
+	// 		dut_default.match(
+	// 			[](const DefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 66);
+	// 				CHECK(wrap.m_method == Method::MoveConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+
+	// 		CHECK(no_default_value.m_method == Method::MovedFrom);
+	// 		dut_no_default.match(
+	// 			[](const NonDefaultConstructible& wrap) {
+	// 				CHECK(wrap.m_value == 77);
+	// 				CHECK(wrap.m_method == Method::MoveConstructed);
+	// 			},
+	// 			[](std::nullopt_t) { CHECK(false); });
+	// 	}
+	// }
+
+	/*!
+	 * \todo align with constructors, converting copy and converting move assignment
+	 * \todo emplace assignment
+	 */
 }
 
 SCENARIO("Maybe: modifiers")
@@ -1083,7 +1205,7 @@ SCENARIO("Maybe: modifiers")
 			}
 		}
 
-		WHEN("calling swap with an non-empty Maybe")
+		WHEN("calling swap with a non-empty Maybe")
 		{
 			auto dut_value = Maybe<DefaultConstructible>{42};
 			dut_empty.swap(dut_value);
@@ -1262,6 +1384,16 @@ SCENARIO("Maybe: observers")
 				CHECK(dut.value_or(6) == 44);
 			}
 		}
+
+		WHEN("calling value_or on a const Maybe")
+		{
+			const Maybe<int> const_dut{44};
+
+			THEN("the value can be retrieved")
+			{
+				CHECK(const_dut.value_or(6) == 44);
+			}
+		}
 	}
 }
 
@@ -1309,7 +1441,7 @@ SCENARIO("Maybe: monadic operations")
 
 		WHEN("calling transform on an rvalue Maybe")
 		{
-			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto int_to_string = [](int&& value) { return std::to_string(value); };
 			auto result = std::move(dut).transform(int_to_string);
 			THEN("the result is a Maybe with the transformed value")
 			{
@@ -1332,7 +1464,7 @@ SCENARIO("Maybe: monadic operations")
 		WHEN("calling transform on a const lvalue Maybe")
 		{
 			const Maybe<int> const_dut{11};
-			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto int_to_string = [](const int& value) { return std::to_string(value); };
 			auto result = const_dut.transform(int_to_string);
 			THEN("the result is a Maybe with the transformed value and the source is unchanged")
 			{
@@ -1355,7 +1487,7 @@ SCENARIO("Maybe: monadic operations")
 		WHEN("calling transform on a const rvalue Maybe")
 		{
 			const Maybe<int> const_dut{11};
-			auto int_to_string = [](int value) { return std::to_string(value); };
+			auto int_to_string = [](const int&& value) { return std::to_string(value); };
 			auto result = std::move(const_dut).transform(int_to_string);
 			THEN("the result is a Maybe with the transformed value")
 			{
@@ -1468,40 +1600,68 @@ SCENARIO("Maybe: monadic operations")
 	}
 }
 
-SCENARIO("Maybe: value_or exception behaviour")
+SCENARIO("Maybe: cvref overload dispatch")
 {
-	GIVEN("a const Maybe containing a type that throws on copy")
+	WHEN("calling value_or on const lvalue with a value")
 	{
-		const Maybe<ThrowOnCopy> dut{ThrowOnCopy{5}};
+		const Maybe<DefaultConstructible> dut{DefaultConstructible{55}};
 
-		WHEN("calling value_or on const&")
+		auto result = dut.value_or(DefaultConstructible{66});
+
+		THEN("the stored value is returned")
 		{
-			THEN("copying the stored value throws")
-			{
-				CHECK_THROWS_AS(std::ignore = dut.value_or(ThrowOnCopy{6}), std::runtime_error);
-			}
+			CHECK(result.m_value == 55);
 		}
 	}
 
-	GIVEN("an empty const Maybe with fallback value")
+	WHEN("calling transform overloads with a value")
 	{
-		const Maybe<ThrowOnCopy> dut{std::nullopt};
+		bool called_lvalue = false;
+		bool called_const_lvalue = false;
+		bool called_rvalue = false;
+		bool called_const_rvalue = false;
 
-		WHEN("calling value_or on const&")
+		Maybe<DefaultConstructible> dut_lvalue{DefaultConstructible{21}};
+		const Maybe<DefaultConstructible> dut_const_lvalue{DefaultConstructible{22}};
+		Maybe<DefaultConstructible> dut_rvalue{DefaultConstructible{23}};
+		const Maybe<DefaultConstructible> dut_const_rvalue{DefaultConstructible{24}};
+
+		auto result_lvalue = dut_lvalue.transform([&called_lvalue](DefaultConstructible& value) {
+			called_lvalue = true;
+			++value.m_value;
+			return value.m_value;
+		});
+
+		auto result_const_lvalue =
+			dut_const_lvalue.transform([&called_const_lvalue](const DefaultConstructible& value) {
+				called_const_lvalue = true;
+				return value.m_value;
+			});
+
+		auto result_rvalue = std::move(dut_rvalue).transform([&called_rvalue](DefaultConstructible&& value) {
+			called_rvalue = true;
+			return value.m_value;
+		});
+
+		auto result_const_rvalue =
+			std::move(dut_const_rvalue).transform([&called_const_rvalue](const DefaultConstructible&& value) {
+				called_const_rvalue = true;
+				return value.m_value;
+			});
+
+		THEN("all overload callbacks are invoked")
 		{
-			auto result = dut.value_or(ThrowOnCopy{6});
+			CHECK(called_lvalue);
+			CHECK(called_const_lvalue);
+			CHECK(called_rvalue);
+			CHECK(called_const_rvalue);
 
-			THEN("the fallback is returned")
-			{
-				CHECK(result.m_value == 6);
-			}
+			CHECK(result_lvalue.match([](int value) { return value == 22; }, [](std::nullopt_t) { return false; }));
+			CHECK(
+				result_const_lvalue.match([](int value) { return value == 22; }, [](std::nullopt_t) { return false; }));
+			CHECK(result_rvalue.match([](int value) { return value == 23; }, [](std::nullopt_t) { return false; }));
+			CHECK(
+				result_const_rvalue.match([](int value) { return value == 24; }, [](std::nullopt_t) { return false; }));
 		}
 	}
 }
-
-// SCENARIO("Maybe: invalid types")
-// {
-// 	// Maybe<std::in_place_t> dut1{};
-// 	// Maybe<void> dut2{};
-// 	// Maybe<std::nullopt_t> dut3{};
-// }
