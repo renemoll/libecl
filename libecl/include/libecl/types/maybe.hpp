@@ -59,12 +59,13 @@ constexpr bool converts_from_any_cvref = std::disjunction_v<std::is_constructibl
  * \brief Maybe type, may contain a value of type T or nothing (like std::optional).
  * \tparam T The type contained by the Maybe.
  *
- * A variation of std::optional, omitting functions which can lead to undefined behaviour,
- * such as operator* and operator->. The Maybe type is designed to be used in contexts where
- * exceptions are not allowed, and where the user wants to avoid undefined behaviour when accessing
- * the contained value.
+ * A variation of std::optional with the following characteristics:
+ * - Omits functions which can lead to undefined behaviour, such as operator* and operator->;
+ * - Designed for use in contexts where exceptions are not allowed;
+ * - Provides safe access to the contained value through value_or and match functions.
+ * - Does not allow implicit conversions from types that could lead to ambiguity or unsafe operations;
  *
- * Instead, use one of the following methods:
+ * To access the container value, use one of the following methods:
  * - the \a value_or function to provide a default value in case the Maybe is empty;
  * - the \a match function with handlers for both cases: when a value is present and when empty.
  */
@@ -101,23 +102,27 @@ public:
 	/*!
 	 * \brief Copy constructor.
 	 */
-	constexpr Maybe(Maybe const& rhs)
+	constexpr Maybe(const Maybe& rhs)
 		requires(std::is_copy_constructible_v<value_type>)
 		: m_storage(rhs.m_storage)
 	{
 	}
 
 	// Default copy constructor is deleted to ensure value_type is copy constructible.
-	constexpr Maybe(const Maybe&) = delete;
+	constexpr Maybe(Maybe const&) = delete;
 
 	/*!
 	 * \brief Move constructor.
+	 * \note  If rhs contains a value, it will be moved from and reset to empty.
 	 */
 	constexpr Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<value_type>)
 		requires(std::is_move_constructible_v<value_type>)
 		: m_storage(std::nullopt)
 	{
-		m_storage.swap(rhs.m_storage);
+		if (rhs.has_value()) {
+			m_storage.template emplace<value_type>(std::move(*std::get_if<T>(&rhs.m_storage)));
+			rhs.reset();
+		}
 	}
 
 	// Default move constructor is deleted to ensure value_type is move constructible.
@@ -139,7 +144,7 @@ public:
 	template <typename U, typename... Args>
 	constexpr explicit Maybe(std::in_place_t, std::initializer_list<U> il, Args&&... args)
 		requires(std::is_constructible_v<T, std::initializer_list<U>&, Args && ...>)
-		: m_storage(T(il, std::forward<Args>(args)...))
+		: m_storage(std::in_place_type<T>, il, std::forward<Args>(args)...)
 	{
 	}
 
@@ -149,43 +154,29 @@ public:
 	template <typename U = std::remove_cvref_t<T>>
 	constexpr explicit Maybe(U&& value)
 		requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> && !std::is_convertible_v<U, T>)
+				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> /*&& !std::is_convertible_v<U, T>*/)
 		: m_storage(std::in_place_type<T>, std::forward<U>(value))
 	{
 	}
 
-	/*!
-	 * \brief Non-explicit converting move from value constructor.
-	 */
-	template <typename U = std::remove_cvref_t<T>>
-	constexpr Maybe(U&& value)
-		requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> && std::is_convertible_v<U, T>)
-		: m_storage(std::in_place_type<T>, std::forward<U>(value))
-	{
-	}
+	// /*!
+	//  * \brief Non-explicit converting move from value constructor.
+	//  */
+	// template <typename U = std::remove_cvref_t<T>>
+	// constexpr Maybe(U&& value)
+	// 	requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
+	// 			 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> && std::is_convertible_v<U, T>)
+	// 	: m_storage(std::in_place_type<T>, std::forward<U>(value))
+	// {
+	// }
 
 	/*!
 	 * \brief Explicit converting copy constructor.
 	 */
 	template <typename U>
 	constexpr explicit Maybe(Maybe<U> const& rhs)
-		requires(std::is_constructible_v<T, const U&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 !std::is_convertible_v<const U&, T>)
-		: m_storage(std::nullopt)
-	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage.template emplace<value_type>(*val);
-		}
-	}
-
-	/*!
-	 * \brief Non-explicit converting copy constructor.
-	 */
-	template <typename U>
-		requires(std::is_constructible_v<T, const U&> && !converts_from_any_cvref<T, Maybe<U>> &&
-				 std::is_convertible_v<const U&, T>)
-	constexpr Maybe(Maybe<U> const& rhs)
+		requires(std::is_constructible_v<T, const U&> && !converts_from_any_cvref<T, Maybe<U>> /* &&
+				 !std::is_convertible_v<const U&, T>*/)
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
@@ -195,30 +186,17 @@ public:
 
 	/*!
 	 * \brief Explicit converting move constructor.
+	 * \note  If rhs contains a value, it will be moved from and reset to empty.
 	 */
 	template <typename U>
 	constexpr explicit Maybe(Maybe<U>&& rhs)
-		requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>> && !std::is_convertible_v<U, T>)
+		requires(std::is_constructible_v<T, U> &&
+				 !converts_from_any_cvref<T, Maybe<U>> /*&& !std::is_convertible_v<U, T>*/)
 		: m_storage(std::nullopt)
 	{
 		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
 			std::ignore = val;
-			m_storage.template emplace<value_type>(std::get<U>(std::move(rhs.m_storage)));
-			rhs.m_storage = std::nullopt;
-		}
-	}
-
-	/*!
-	 * \brief Non-explicit converting move constructor.
-	 */
-	template <typename U>
-	constexpr Maybe(Maybe<U>&& rhs)
-		requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>> && std::is_convertible_v<U, T>)
-		: m_storage(std::nullopt)
-	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			std::ignore = val;
-			m_storage.template emplace<value_type>(std::get<U>(std::move(rhs.m_storage)));
+			m_storage.template emplace<value_type>(std::move(std::get<U>(std::move(rhs.m_storage))));
 			rhs.m_storage = std::nullopt;
 		}
 	}
@@ -247,11 +225,16 @@ public:
 	constexpr Maybe<T>& operator=(const Maybe& rhs)
 		requires(std::is_copy_constructible_v<value_type> && std::is_copy_assignable_v<value_type>)
 	{
+		if (this == &rhs) {
+			return *this;
+		}
+
 		if (rhs.has_value()) {
 			if (has_value()) {
 				m_storage = rhs.m_storage;
 			} else {
-				m_storage = T(std::get<value_type>(rhs.m_storage));
+				m_storage.template emplace<value_type>(std::get<value_type>(rhs.m_storage));
+				// m_storage = std::get<value_type>(rhs.m_storage);
 			}
 		} else {
 			reset();
@@ -269,6 +252,10 @@ public:
 														std::is_nothrow_move_constructible_v<value_type>)
 		requires(std::is_move_constructible_v<value_type> && std::is_move_assignable_v<value_type>)
 	{
+		if (this == &rhs) {
+			return *this;
+		}
+
 		if (rhs.has_value()) {
 			if (has_value()) {
 				m_storage = std::move(rhs.m_storage);
@@ -290,59 +277,16 @@ public:
 	 */
 	template <typename U = std::remove_cvref_t<T>>
 	constexpr Maybe<T>& operator=(U&& rhs)
-		requires(!std::is_same_v<U, Maybe> &&
-				 !std::conjunction_v<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>> &&
-				 std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>)
+		requires(
+			// !std::is_same_v<std::remove_cvref_t<U>, Maybe> &&
+			//  !std::conjunction_v<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>> &&
+			!is_derived_from_maybe<std::remove_cvref_t<U>> && std::is_constructible_v<T, U> &&
+			std::is_assignable_v<T&, U>)
 	{
 		if (has_value()) {
-			m_storage = std::forward<U>(rhs);
+			std::get<value_type>(m_storage) = std::forward<U>(rhs);
 		} else {
-			m_storage = T(std::forward<U>(rhs));
-		}
-		return *this;
-	}
-
-	/*!
-	 * \brief Converting copy assignment.
-	 */
-	template <class U>
-	constexpr Maybe<T>& operator=(const Maybe<U>& rhs)
-		requires(std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&> &&
-				 !converts_from_any_cvref<T, Maybe<U>> && !std::is_assignable_v<T&, Maybe<U>&> &&
-				 !std::is_assignable_v<T&, Maybe<U> &&> && !std::is_assignable_v<T&, const Maybe<U>&> &&
-				 !std::is_assignable_v<T&, const Maybe<U> &&>)
-	{
-		if (rhs.has_value()) {
-			if (has_value()) {
-				std::get<value_type>(m_storage) = std::get<U>(rhs.m_storage);
-			} else {
-				m_storage = T(std::get<U>(rhs.m_storage));
-			}
-		} else {
-			reset();
-		}
-		return *this;
-	}
-
-	/*!
-	 * \brief Converting move assignment.
-	 */
-	template <class U>
-	constexpr Maybe<T>& operator=(Maybe<U>&& rhs)
-		requires(std::is_constructible_v<T, U> && std::is_assignable_v<T&, U> &&
-				 !converts_from_any_cvref<T, Maybe<U>> && !std::is_assignable_v<T&, Maybe<U>&> &&
-				 !std::is_assignable_v<T&, Maybe<U> &&> && !std::is_assignable_v<T&, const Maybe<U>&> &&
-				 !std::is_assignable_v<T&, const Maybe<U> &&>)
-	{
-		if (rhs.has_value()) {
-			if (has_value()) {
-				std::get<value_type>(m_storage) = std::get<U>(std::move(rhs.m_storage));
-			} else {
-				m_storage = T(std::get<U>(std::move(rhs.m_storage)));
-			}
-			rhs.reset();
-		} else {
-			reset();
+			m_storage.template emplace<value_type>(std::forward<U>(rhs));
 		}
 		return *this;
 	}
@@ -375,19 +319,22 @@ public:
 
 	constexpr void swap(Maybe& rhs) noexcept(std::is_nothrow_move_constructible_v<value_type> &&
 											 std::is_nothrow_swappable_v<value_type>)
-		requires(std::is_move_constructible_v<value_type>)
+		requires(std::is_move_constructible_v<value_type> && std::is_swappable_v<value_type>)
 	{
 		if (has_value()) {
 			if (rhs.has_value()) {
-				std::swap(m_storage, rhs.m_storage);
+				// std::swap(m_storage, rhs.m_storage);
+				m_storage.swap(rhs.m_storage);
 			} else {
 				// rhs.m_storage = std::move(m_storage);
-				std::swap(m_storage, rhs.m_storage);
+				// std::swap(m_storage, rhs.m_storage);
+				rhs.m_storage.swap(m_storage);
 				reset();
 			}
 		} else if (rhs.has_value()) {
 			// m_storage = std::move(rhs.m_storage);
-			std::swap(m_storage, rhs.m_storage);
+			// std::swap(m_storage, rhs.m_storage);
+			m_storage.swap(rhs.m_storage);
 			rhs.reset();
 		}
 	}
@@ -417,11 +364,15 @@ public:
 	 * \param default_value: a fallback value in case the Maybe is empty.
 	 */
 	template <typename U = std::remove_cv_t<T>>
-		requires(std::is_copy_constructible_v<T> && std::is_convertible_v<U &&, T>)
+		requires(std::is_move_constructible_v<T> && std::is_convertible_v<U &&, T>)
 	[[nodiscard]] constexpr value_type value_or(U&& default_value) &&
 	{
-		return match([](T const& value) { return value; },
-					 [&](std::nullopt_t) { return T{std::forward<U>(default_value)}; });
+		if (has_value()) {
+			return T(std::move(std::get<T>(m_storage)));
+		}
+		return T{std::forward<U>(default_value)};
+		// return match([](T const& value) { return value; },
+		//  [&](std::nullopt_t) { return T{std::forward<U>(default_value)}; });
 	}
 
 	/*!
@@ -445,7 +396,7 @@ public:
 	 * \param matchers: a set of callable objects, each accepting a single argument of type T or std::nullopt_t.
 	 */
 	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 1)
+		requires(sizeof...(Matchers) >= 2)
 	[[nodiscard]] constexpr decltype(auto) match(Matchers&&... matchers)
 	{
 		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
@@ -456,7 +407,7 @@ public:
 	 * \param matchers: a set of callable objects, each accepting a single argument of type T or std::nullopt_t.
 	 */
 	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 1)
+		requires(sizeof...(Matchers) >= 2)
 	[[nodiscard]] constexpr decltype(auto) match(Matchers&&... matchers) const
 	{
 		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
@@ -502,7 +453,7 @@ public:
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, T&&>>;
 		if (has_value()) {
-			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+			return std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage)));
 		}
 		return std::remove_cv_t<U>();
 	}
@@ -517,7 +468,7 @@ public:
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&&>>;
 		if (has_value()) {
-			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
+			return std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage)));
 		}
 		return std::remove_cv_t<U>();
 	}
