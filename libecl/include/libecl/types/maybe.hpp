@@ -419,13 +419,14 @@ public:
 	 * \return The result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, T&> && is_derived_from_maybe<std::remove_cvref_t<std::invoke_result_t<F, T&>>>)
 	[[nodiscard]] constexpr auto and_then(F&& func) &
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, T&>>;
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return std::remove_cv_t<U>();
+		return std::remove_cvref_t<U>();
 	}
 
 	/*!
@@ -434,13 +435,15 @@ public:
 	 * \return The result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, const T&> &&
+				 is_derived_from_maybe<std::remove_cvref_t<std::invoke_result_t<F, const T&>>>)
 	[[nodiscard]] constexpr auto and_then(F&& func) const&
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&>>;
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::get<T>(m_storage));
 		}
-		return std::remove_cv_t<U>();
+		return std::remove_cvref_t<U>();
 	}
 
 	/*!
@@ -449,13 +452,15 @@ public:
 	 * \return The result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, T &&> &&
+				 is_derived_from_maybe<std::remove_cvref_t<std::invoke_result_t<F, T &&>>>)
 	[[nodiscard]] constexpr auto and_then(F&& func) &&
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, T&&>>;
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage)));
 		}
-		return std::remove_cv_t<U>();
+		return std::remove_cvref_t<U>();
 	}
 
 	/*!
@@ -464,13 +469,15 @@ public:
 	 * \return The result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, const T &&> &&
+				 is_derived_from_maybe<std::remove_cvref_t<std::invoke_result_t<F, const T &&>>>)
 	[[nodiscard]] constexpr auto and_then(F&& func) const&&
 	{
 		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&&>>;
 		if (has_value()) {
 			return std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage)));
 		}
-		return std::remove_cv_t<U>();
+		return std::remove_cvref_t<U>();
 	}
 
 	/*!
@@ -479,9 +486,10 @@ public:
 	 * \return A Maybe containing the result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, T&> && !std::is_void_v<std::invoke_result_t<F, T&>>)
 	[[nodiscard]] constexpr auto transform(F&& func) &
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
+		using U = std::remove_cvref_t<std::invoke_result_t<F, T&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::get<T>(m_storage)));
 		}
@@ -494,9 +502,10 @@ public:
 	 * \return A Maybe containing the result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, const T&> && !std::is_void_v<std::invoke_result_t<F, const T&>>)
 	[[nodiscard]] constexpr auto transform(F&& func) const&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, const T&>>;
+		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::get<T>(m_storage)));
 		}
@@ -509,9 +518,10 @@ public:
 	 * \return A Maybe containing the result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, T &&> && !std::is_void_v<std::invoke_result_t<F, T &&>>)
 	[[nodiscard]] constexpr auto transform(F&& func) &&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, T&&>>;
+		using U = std::remove_cvref_t<std::invoke_result_t<F, T&&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
 		}
@@ -524,9 +534,10 @@ public:
 	 * \return A Maybe containing the result of \a func if the Maybe contains a value, otherwise an empty Maybe.
 	 */
 	template <class F>
+		requires(std::is_invocable_v<F, const T &&> && !std::is_void_v<std::invoke_result_t<F, const T &&>>)
 	[[nodiscard]] constexpr auto transform(F&& func) const&&
 	{
-		using U = std::remove_cv_t<std::invoke_result_t<F, const T&&>>;
+		using U = std::remove_cvref_t<std::invoke_result_t<F, const T&&>>;
 		if (has_value()) {
 			return Maybe<U>(std::invoke(std::forward<F>(func), std::move(std::get<T>(m_storage))));
 		}
@@ -539,8 +550,9 @@ public:
 	 * \return The current Maybe if it contains a value, otherwise the result of \a func.
 	 */
 	template <class F>
+		requires(std::is_copy_constructible_v<T> && std::is_invocable_v<F> &&
+				 std::is_same_v<std::remove_cvref_t<std::invoke_result_t<F>>, Maybe<std::remove_cvref_t<T>>>)
 	[[nodiscard]] constexpr Maybe or_else(F&& func) const&
-		requires(std::is_copy_constructible_v<T> && std::is_invocable_v<F>)
 	{
 		if (has_value()) {
 			return *this;
@@ -554,7 +566,8 @@ public:
 	 * \return The current Maybe if it contains a value, otherwise the result of \a func.
 	 */
 	template <class F>
-		requires(std::is_move_constructible_v<T> && std::is_invocable_v<F>)
+		requires(std::is_move_constructible_v<T> && std::is_invocable_v<F> &&
+				 std::is_same_v<std::remove_cvref_t<std::invoke_result_t<F>>, Maybe<std::remove_cvref_t<T>>>)
 	[[nodiscard]] constexpr Maybe or_else(F&& func) &&
 	{
 		if (has_value()) {

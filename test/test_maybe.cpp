@@ -377,6 +377,59 @@ public:
 
 	std::size_t m_size;
 };
+
+struct ReturnsInt
+{
+	int operator()(int value) const
+	{
+		return value;
+	}
+};
+
+struct ReturnsMaybeInt
+{
+	Maybe<int> operator()(int value) const
+	{
+		return Maybe<int>{value};
+	}
+};
+
+struct ReturnsVoid
+{
+	void operator()(int) const {}
+};
+
+struct ReturnsIntFallback
+{
+	int operator()() const
+	{
+		return 0;
+	}
+};
+
+struct ReturnsMaybeIntFallback
+{
+	Maybe<int> operator()() const
+	{
+		return Maybe<int>{0};
+	}
+};
+
+template <class F>
+concept MaybeIntAndThenCallable = requires(Maybe<int>& value, F callback) { value.and_then(callback); };
+
+template <class F>
+concept MaybeIntTransformCallable = requires(Maybe<int>& value, F callback) { value.transform(callback); };
+
+template <class F>
+concept MaybeIntOrElseCallable = requires(Maybe<int>& value, F callback) { value.or_else(callback); };
+
+static_assert(!MaybeIntAndThenCallable<ReturnsInt>);
+static_assert(MaybeIntAndThenCallable<ReturnsMaybeInt>);
+static_assert(MaybeIntTransformCallable<ReturnsInt>);
+static_assert(!MaybeIntTransformCallable<ReturnsVoid>);
+static_assert(!MaybeIntOrElseCallable<ReturnsIntFallback>);
+static_assert(MaybeIntOrElseCallable<ReturnsMaybeIntFallback>);
 }  // namespace
 
 SCENARIO("Maybe: type traits")
@@ -1551,6 +1604,148 @@ SCENARIO("Maybe: assignment")
 					[](std::nullopt_t) { CHECK(false); });
 			}
 		}
+
+		WHEN("emplace (value)")
+		{
+			const auto result1 = dut_primitive_empty.emplace(41);
+			const auto result2 = dut_default_empty.emplace(42);
+			const auto& result3 = dut_explicit_empty.emplace(40);
+			const auto& result4 = dut_copy_empty.emplace(102);
+			const auto& result5 = dut_move_empty.emplace(96);
+			const auto& result6 = dut_no_copy_no_move_empty.emplace(87);
+			const auto& result7 = dut_no_copy_assign_empty.emplace(78);
+			const auto& result8 = dut_no_move_assign_empty.emplace(69);
+
+			THEN("the Maybes contain the value")
+			{
+				CHECK(dut_primitive_empty.has_value());
+				dut_primitive_empty.match([](int val) { CHECK(val == 41); }, [](std::nullopt_t) { CHECK(false); });
+				CHECK(result1 == 41);
+
+				CHECK(dut_default_empty.has_value());
+				dut_default_empty.match(
+					[](const DefaultConstructible& wrap) {
+						CHECK(wrap.m_value == 42);
+						CHECK(wrap.m_method == Method::DefaultConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result2.m_value == 42);
+
+				CHECK(dut_explicit_empty.has_value());
+				dut_explicit_empty.match(
+					[](const ExplicitConstructible& wrap) {
+						CHECK(wrap.m_value == 40);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result3.m_value == 40);
+
+				CHECK(dut_copy_empty.has_value());
+				dut_copy_empty.match(
+					[](const CopyableOnly& wrap) {
+						CHECK(wrap.m_value == 102);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result4.m_value == 102);
+
+				CHECK(dut_move_empty.has_value());
+				dut_move_empty.match(
+					[](const MoveableOnly& wrap) {
+						CHECK(wrap.m_value == 96);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result5.m_value == 96);
+
+				CHECK(dut_no_copy_no_move_empty.has_value());
+				dut_no_copy_no_move_empty.match(
+					[](const NonCopyableNonMovable& wrap) {
+						CHECK(wrap.m_value == 87);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result6.m_value == 87);
+
+				CHECK(dut_no_copy_assign_empty.has_value());
+				dut_no_copy_assign_empty.match(
+					[](const CopyConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 78);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result7.m_value == 78);
+
+				CHECK(dut_no_move_assign_empty.has_value());
+				dut_no_move_assign_empty.match(
+					[](const MoveConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 69);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result8.m_value == 69);
+			}
+		}
+
+		WHEN("emplace (move)")
+		{
+			int primitive_value = 41;
+			const auto result1 = dut_primitive_empty.emplace(std::move(primitive_value));
+			DefaultConstructible default_value(42);
+			const auto result2 = dut_default_empty.emplace(std::move(default_value));
+			ExplicitConstructible explicit_value(40);
+			const auto& result3 = dut_explicit_empty.emplace(std::move(explicit_value));
+			static_assert(!std::is_move_constructible_v<CopyableOnly>);
+			MoveableOnly move_value(96);
+			const auto& result5 = dut_move_empty.emplace(std::move(move_value));
+			static_assert(!std::is_move_constructible_v<NonCopyableNonMovable>);
+			static_assert(!std::is_move_constructible_v<CopyConstructibleOnly>);
+			MoveConstructibleOnly no_move_assign_value(69);
+			const auto& result8 = dut_no_move_assign_empty.emplace(std::move(no_move_assign_value));
+
+			THEN("the Maybes contain the value")
+			{
+				CHECK(dut_primitive_empty.has_value());
+				dut_primitive_empty.match([](int val) { CHECK(val == 41); }, [](std::nullopt_t) { CHECK(false); });
+				CHECK(result1 == 41);
+
+				CHECK(dut_default_empty.has_value());
+				dut_default_empty.match(
+					[](const DefaultConstructible& wrap) {
+						CHECK(wrap.m_value == 42);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result2.m_value == 42);
+
+				CHECK(dut_explicit_empty.has_value());
+				dut_explicit_empty.match(
+					[](const ExplicitConstructible& wrap) {
+						CHECK(wrap.m_value == 40);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result3.m_value == 40);
+
+				CHECK(dut_move_empty.has_value());
+				dut_move_empty.match(
+					[](const MoveableOnly& wrap) {
+						CHECK(wrap.m_value == 96);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result5.m_value == 96);
+
+				CHECK(dut_no_move_assign_empty.has_value());
+				dut_no_move_assign_empty.match(
+					[](const MoveConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 69);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result8.m_value == 69);
+			}
+		}
 	}
 
 	GIVEN("an engaged Maybe")
@@ -1883,6 +2078,148 @@ SCENARIO("Maybe: assignment")
 								  [](std::nullopt_t) { CHECK(false); });
 			}
 		}
+
+		WHEN("emplace (value)")
+		{
+			const auto result1 = dut_primitive_value.emplace(41);
+			const auto result2 = dut_default_value.emplace(42);
+			const auto& result3 = dut_explicit_value.emplace(40);
+			const auto& result4 = dut_copy_value.emplace(102);
+			const auto& result5 = dut_move_value.emplace(96);
+			const auto& result6 = dut_no_copy_no_move_value.emplace(87);
+			const auto& result7 = dut_no_copy_assign_value.emplace(78);
+			const auto& result8 = dut_no_move_assign_value.emplace(69);
+
+			THEN("the Maybes contain the value")
+			{
+				CHECK(dut_primitive_value.has_value());
+				dut_primitive_value.match([](int val) { CHECK(val == 41); }, [](std::nullopt_t) { CHECK(false); });
+				CHECK(result1 == 41);
+
+				CHECK(dut_default_value.has_value());
+				dut_default_value.match(
+					[](const DefaultConstructible& wrap) {
+						CHECK(wrap.m_value == 42);
+						CHECK(wrap.m_method == Method::DefaultConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result2.m_value == 42);
+
+				CHECK(dut_explicit_value.has_value());
+				dut_explicit_value.match(
+					[](const ExplicitConstructible& wrap) {
+						CHECK(wrap.m_value == 40);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result3.m_value == 40);
+
+				CHECK(dut_copy_value.has_value());
+				dut_copy_value.match(
+					[](const CopyableOnly& wrap) {
+						CHECK(wrap.m_value == 102);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result4.m_value == 102);
+
+				CHECK(dut_move_value.has_value());
+				dut_move_value.match(
+					[](const MoveableOnly& wrap) {
+						CHECK(wrap.m_value == 96);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result5.m_value == 96);
+
+				CHECK(dut_no_copy_no_move_value.has_value());
+				dut_no_copy_no_move_value.match(
+					[](const NonCopyableNonMovable& wrap) {
+						CHECK(wrap.m_value == 87);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result6.m_value == 87);
+
+				CHECK(dut_no_copy_assign_value.has_value());
+				dut_no_copy_assign_value.match(
+					[](const CopyConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 78);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result7.m_value == 78);
+
+				CHECK(dut_no_move_assign_value.has_value());
+				dut_no_move_assign_value.match(
+					[](const MoveConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 69);
+						CHECK(wrap.m_method == Method::ValueConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result8.m_value == 69);
+			}
+		}
+
+		WHEN("emplace (move)")
+		{
+			int primitive_value = 41;
+			const auto result1 = dut_primitive_value.emplace(std::move(primitive_value));
+			DefaultConstructible default_value(42);
+			const auto result2 = dut_default_value.emplace(std::move(default_value));
+			ExplicitConstructible explicit_value(40);
+			const auto& result3 = dut_explicit_value.emplace(std::move(explicit_value));
+			static_assert(!std::is_move_constructible_v<CopyableOnly>);
+			MoveableOnly move_value(96);
+			const auto& result5 = dut_move_value.emplace(std::move(move_value));
+			static_assert(!std::is_move_constructible_v<NonCopyableNonMovable>);
+			static_assert(!std::is_move_constructible_v<CopyConstructibleOnly>);
+			MoveConstructibleOnly no_move_assign_value(69);
+			const auto& result8 = dut_no_move_assign_value.emplace(std::move(no_move_assign_value));
+
+			THEN("the Maybes contain the value")
+			{
+				CHECK(dut_primitive_value.has_value());
+				dut_primitive_value.match([](int val) { CHECK(val == 41); }, [](std::nullopt_t) { CHECK(false); });
+				CHECK(result1 == 41);
+
+				CHECK(dut_default_value.has_value());
+				dut_default_value.match(
+					[](const DefaultConstructible& wrap) {
+						CHECK(wrap.m_value == 42);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result2.m_value == 42);
+
+				CHECK(dut_explicit_value.has_value());
+				dut_explicit_value.match(
+					[](const ExplicitConstructible& wrap) {
+						CHECK(wrap.m_value == 40);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result3.m_value == 40);
+
+				CHECK(dut_move_value.has_value());
+				dut_move_value.match(
+					[](const MoveableOnly& wrap) {
+						CHECK(wrap.m_value == 96);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result5.m_value == 96);
+
+				CHECK(dut_no_move_assign_value.has_value());
+				dut_no_move_assign_value.match(
+					[](const MoveConstructibleOnly& wrap) {
+						CHECK(wrap.m_value == 69);
+						CHECK(wrap.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+				CHECK(result8.m_value == 69);
+			}
+		}
 	}
 
 	WHEN("converting copy/move assignment")
@@ -1897,40 +2234,6 @@ SCENARIO("Maybe: assignment")
 		static_assert(!std::is_assignable_v<Maybe<long>&, const Maybe<int>&&>);
 	}
 
-	// TODO
-	WHEN("emplace")
-	{
-		Maybe<DefaultConstructible> dut;
-		Maybe<ExplicitConstructible> dut_explicit;
-		Maybe<NonCopyableNonMovable> dut_no_copy_no_move(101);
-
-		const auto result1 = dut.emplace(41);
-		const auto result2 = dut.emplace(42);
-		ExplicitConstructible value(1);
-		const auto& result3 = dut_explicit.emplace(std::move(value));
-		const auto& result4 = dut_no_copy_no_move.emplace(102);
-
-		THEN("the Maybe holds the value")
-		{
-			CHECK(dut.has_value());
-			dut.match([](const DefaultConstructible& wrap) { CHECK(wrap.m_value == 42); },
-					  [](std::nullopt_t) { CHECK(false); });
-			CHECK(result1.m_value == 41);
-			CHECK(result2.m_value == 42);
-
-			CHECK(dut_explicit.has_value());
-			dut_explicit.match([](const ExplicitConstructible& wrap) { CHECK(wrap.m_value == 1); },
-							   [](std::nullopt_t) { CHECK(false); });
-			CHECK(result3.m_value == 1);
-
-			CHECK(dut_no_copy_no_move.has_value());
-			dut_no_copy_no_move.match([](const NonCopyableNonMovable& wrap) { CHECK(wrap.m_value == 102); },
-									  [](std::nullopt_t) { CHECK(false); });
-			CHECK(result4.m_value == 102);
-		}
-	}
-
-	// TODO
 	WHEN("emplace with initializer list")
 	{
 		Maybe<NonMovableList> dut;
@@ -1944,39 +2247,6 @@ SCENARIO("Maybe: assignment")
 			CHECK(result.m_size == 3);
 		}
 	}
-
-	// 	WHEN("calling emplace (copy)")
-	// 	{
-	// 		const auto& result = dut_no_copy_no_move.emplace(11);
-
-	// 		THEN("the Maybe holds the value")
-	// 		{
-	// 			CHECK(dut_no_copy_no_move.has_value());
-	// 			CHECK(dut_no_copy_no_move.match(
-	// 				[](const NonCopyableNonMovable& value) {
-	// 					return value.m_value == 11 && value.m_method == Method::ValueConstructed;
-	// 				},
-	// 				[](std::nullopt_t) { return false; }));
-	// 			CHECK(result.m_value == 11);
-	// 		}
-	// 	}
-
-	// 	WHEN("calling emplace (move)")
-	// 	{
-	// 		auto value = DefaultConstructible{42};
-	// 		const auto& result = dut_value.emplace(std::move(value));
-
-	// 		THEN("the Maybe holds the value")
-	// 		{
-	// 			CHECK(dut_value.has_value());
-	// 			CHECK(dut_value.match(
-	// 				[](const DefaultConstructible& wrap) {
-	// 					return wrap.m_value == 42 && wrap.m_method == Method::MoveConstructed;
-	// 				},
-	// 				[](std::nullopt_t) { return false; }));
-	// 			CHECK(result.m_value == 42);
-	// 		}
-	// 	}
 }
 
 SCENARIO("Maybe: swap")
@@ -2084,360 +2354,534 @@ SCENARIO("Maybe: modifiers")
 
 SCENARIO("Maybe: observers")
 {
-	/*
-		GIVEN("an empty Maybe")
+	GIVEN("an empty Maybe")
+	{
+		Maybe<int> dut;
+
+		WHEN("converting to boolean")
 		{
-			Maybe<int> dut;
-
-			WHEN("converting to boolean")
+			THEN("returns false")
 			{
-				THEN("returns false")
-				{
-					CHECK_FALSE(dut);
-				}
-			}
-
-			WHEN("calling has_value")
-			{
-				THEN("returns false")
-				{
-					CHECK_FALSE(dut.has_value());
-				}
-			}
-
-			WHEN("calling match")
-			{
-				THEN("returns nullopt")
-				{
-					CHECK(dut.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
-				}
-			}
-
-			WHEN("calling value_or")
-			{
-				THEN("returns the fallback value")
-				{
-					CHECK(dut.value_or(6) == 6);
-				}
+				CHECK_FALSE(dut);
 			}
 		}
 
-		GIVEN("an Maybe with a value")
+		WHEN("calling has_value")
 		{
-			Maybe<int> dut = 44;
-
-			WHEN("converting to boolean")
+			THEN("returns false")
 			{
-				THEN("returns true")
-				{
-					CHECK(dut);
-				}
-			}
-
-			WHEN("calling has_value")
-			{
-				THEN("returns true")
-				{
-					CHECK(dut.has_value());
-				}
-			}
-
-			WHEN("calling match")
-			{
-				THEN("the value can be retrieved")
-				{
-					CHECK(dut.match([](int value) { return value == 44; }, [](std::nullopt_t) { return false; }));
-				}
-			}
-
-			WHEN("calling value_or")
-			{
-				THEN("the value can be retrieved")
-				{
-					CHECK(dut.value_or(6) == 44);
-				}
-			}
-
-			WHEN("calling value_or on a const Maybe")
-			{
-				const Maybe<int> const_dut{44};
-
-				THEN("the value can be retrieved")
-				{
-					CHECK(const_dut.value_or(6) == 44);
-				}
+				CHECK_FALSE(dut.has_value());
 			}
 		}
-	*/
+
+		WHEN("calling match")
+		{
+			THEN("returns nullopt")
+			{
+				CHECK(dut.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
+			}
+		}
+
+		WHEN("calling value_or")
+		{
+			THEN("returns the fallback value")
+			{
+				CHECK(dut.value_or(6) == 6);
+			}
+		}
+
+		WHEN("calling value_or on a const Maybe")
+		{
+			const Maybe<int> const_dut;
+			const Maybe<DefaultConstructible> const_dut_explicit;
+
+			THEN("the value can be retrieved")
+			{
+				CHECK(const_dut.value_or(6) == 6);
+
+				auto result = const_dut_explicit.value_or(DefaultConstructible{66});
+				CHECK(result.m_value == 66);
+			}
+		}
+	}
+
+	GIVEN("an engaged Maybe")
+	{
+		Maybe<int> dut{44};
+
+		WHEN("converting to boolean")
+		{
+			THEN("returns true")
+			{
+				CHECK(dut);
+			}
+		}
+
+		WHEN("calling has_value")
+		{
+			THEN("returns true")
+			{
+				CHECK(dut.has_value());
+			}
+		}
+
+		WHEN("calling match")
+		{
+			THEN("the value can be retrieved")
+			{
+				CHECK(dut.match([](int value) { return value == 44; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("calling value_or")
+		{
+			THEN("the value can be retrieved")
+			{
+				CHECK(dut.value_or(6) == 44);
+			}
+		}
+
+		WHEN("calling value_or on a const Maybe")
+		{
+			const Maybe<int> const_dut_primitive{44};
+			const Maybe<DefaultConstructible> const_dut_explicit{DefaultConstructible{55}};
+
+			THEN("the value can be retrieved")
+			{
+				CHECK(const_dut_primitive.value_or(6) == 44);
+
+				auto result = const_dut_explicit.value_or(DefaultConstructible{66});
+				CHECK(result.m_value == 55);
+			}
+		}
+	}
 }
 
 SCENARIO("Maybe: monadic operations")
 {
-	// GIVEN("an Maybe with a value")
-	// {
-	// 	Maybe<int> dut = 11;
+	GIVEN("an empty Maybe")
+	{
+		Maybe<int> dut;
 
-	// 	WHEN("calling and_then")
-	// 	{
-	// 		auto int_to_maybe_string = [](int value) { return Maybe<std::string>(std::to_string(value)); };
-	// 		auto result = dut.and_then(int_to_maybe_string);
-	// 		THEN("the result is a Maybe with the transformed value")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](const std::string& str) { return str == "11"; },
-	// 							   [](std::nullopt_t) { return false; }));
-	// 			CHECK(dut.has_value());
-	// 			CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 		}
-	// 	}
+		WHEN("and_then (lvalue)")
+		{
+			bool called = false;
+			auto result = dut.and_then([&called](int value) {
+				called = true;
+				return Maybe<std::string>(std::to_string(value));
+			});
 
-	// 	WHEN("calling transform on a lvalue Maybe")
-	// 	{
-	// 		auto int_to_string = [](int value) { return std::to_string(value); };
-	// 		auto result = dut.transform(int_to_string);
-	// 		THEN("the result is a Maybe with the transformed value")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](const std::string& str) { return str == "11"; },
-	// 							   [](std::nullopt_t) { return false; }));
-	// 			CHECK(dut.has_value());
-	// 			CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 		}
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
-	// 		dut.reset();
-	// 		result = dut.transform(int_to_string);
-	// 		THEN("the result is an empty Maybe")
-	// 		{
-	// 			CHECK_FALSE(result.has_value());
-	// 			CHECK_FALSE(dut.has_value());
-	// 		}
-	// 	}
+		WHEN("and_then (const lvalue)")
+		{
+			const Maybe<int> const_dut;
+			bool called = false;
+			auto result = const_dut.and_then([&called](const int& value) {
+				called = true;
+				return Maybe<std::string>(std::to_string(value));
+			});
 
-	// 	WHEN("calling transform on an rvalue Maybe")
-	// 	{
-	// 		auto int_to_string = [](int&& value) { return std::to_string(value); };
-	// 		auto result = std::move(dut).transform(int_to_string);
-	// 		THEN("the result is a Maybe with the transformed value")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](const std::string& str) { return str == "11"; },
-	// 							   [](std::nullopt_t) { return false; }));
-	// 			CHECK(dut.has_value());
-	// 			CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 		}
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_dut.has_value());
+			}
+		}
 
-	// 		auto empty = Maybe<int>{};
-	// 		result = std::move(empty).transform(int_to_string);
-	// 		THEN("the result is an empty Maybe")
-	// 		{
-	// 			CHECK_FALSE(result.has_value());
-	// 			CHECK_FALSE(empty.has_value());
-	// 		}
-	// 	}
+		WHEN("and_then (rvalue)")
+		{
+			bool called = false;
+			auto result = std::move(dut).and_then([&called](int&& value) {
+				called = true;
+				return Maybe<std::string>(std::to_string(value));
+			});
 
-	// 	WHEN("calling transform on a const lvalue Maybe")
-	// 	{
-	// 		const Maybe<int> const_dut{11};
-	// 		auto int_to_string = [](const int& value) { return std::to_string(value); };
-	// 		auto result = const_dut.transform(int_to_string);
-	// 		THEN("the result is a Maybe with the transformed value and the source is unchanged")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](const std::string& str) { return str == "11"; },
-	// 							   [](std::nullopt_t) { return false; }));
-	// 			CHECK(const_dut.has_value());
-	// 			CHECK(const_dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 		}
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
-	// 		const Maybe<int> const_empty{};
-	// 		result = const_empty.transform(int_to_string);
-	// 		THEN("the result is an empty Maybe")
-	// 		{
-	// 			CHECK_FALSE(result.has_value());
-	// 			CHECK_FALSE(const_empty.has_value());
-	// 		}
-	// 	}
+		WHEN("and_then (const rvalue)")
+		{
+			const Maybe<int> const_dut;
+			bool called = false;
+			auto result = std::move(const_dut).and_then([&called](const int&& value) {
+				called = true;
+				return Maybe<std::string>(std::to_string(value));
+			});
 
-	// 	WHEN("calling transform on a const rvalue Maybe")
-	// 	{
-	// 		const Maybe<int> const_dut{11};
-	// 		auto int_to_string = [](const int&& value) { return std::to_string(value); };
-	// 		auto result = std::move(const_dut).transform(int_to_string);
-	// 		THEN("the result is a Maybe with the transformed value")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](const std::string& str) { return str == "11"; },
-	// 							   [](std::nullopt_t) { return false; }));
-	// 			CHECK(const_dut.has_value());
-	// 		}
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_dut.has_value());
+			}
+		}
 
-	// 		const Maybe<int> const_empty{};
-	// 		result = std::move(const_empty).transform(int_to_string);
-	// 		THEN("the result is an empty Maybe")
-	// 		{
-	// 			CHECK_FALSE(result.has_value());
-	// 			CHECK_FALSE(const_empty.has_value());
-	// 		}
-	// 	}
+		WHEN("transform (lvalue)")
+		{
+			bool called = false;
+			auto result = dut.transform([&called](int value) {
+				called = true;
+				return std::to_string(value);
+			});
 
-	// 	WHEN("calling or_else on a lvalue Maybe")
-	// 	{
-	// 		bool fallback_called = false;
-	// 		auto fallback = [&fallback_called]() {
-	// 			fallback_called = true;
-	// 			return Maybe<int>(0);
-	// 		};
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
-	// 		auto result = dut.or_else(fallback);
-	// 		THEN("the result is the original Maybe")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 			CHECK_FALSE(fallback_called);
-	// 			CHECK(dut.has_value());
-	// 			CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 		}
+		WHEN("transform (const lvalue)")
+		{
+			const Maybe<int> const_dut;
+			bool called = false;
+			auto result = const_dut.transform([&called](const int& value) {
+				called = true;
+				return std::to_string(value);
+			});
 
-	// 		dut.reset();
-	// 		result = dut.or_else(fallback);
-	// 		THEN("the result is the fallback Maybe")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
-	// 			CHECK(fallback_called);
-	// 			CHECK_FALSE(dut.has_value());
-	// 		}
-	// 	}
+			THEN("the callback is not invoked and the result is empty")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_dut.has_value());
+			}
+		}
 
-	// 	WHEN("calling or_else on an rvalue Maybe")
-	// 	{
-	// 		bool fallback_called = false;
-	// 		auto fallback = [&fallback_called]() {
-	// 			fallback_called = true;
-	// 			return Maybe<int>(0);
-	// 		};
+		WHEN("transform (rvalue)")
+		{
+			bool called = false;
+			auto result = std::move(dut).transform([&called](int&& value) {
+				called = true;
+				return std::to_string(value);
+			});
 
-	// 		auto result = std::move(dut).or_else(fallback);
-	// 		THEN("the result is the original Maybe and fallback is not used")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
-	// 			CHECK_FALSE(fallback_called);
-	// 			CHECK_FALSE(dut.has_value());
-	// 		}
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
-	// 		auto empty = Maybe<int>{};
-	// 		result = std::move(empty).or_else(fallback);
-	// 		THEN("the fallback is used for an empty rvalue Maybe")
-	// 		{
-	// 			CHECK(result.has_value());
-	// 			CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
-	// 			CHECK(fallback_called);
-	// 			CHECK_FALSE(empty.has_value());
-	// 		}
-	// 	}
-	// }
+		WHEN("transform (const rvalue)")
+		{
+			bool called = false;
+			const Maybe<int> const_empty{};
+			auto result = std::move(const_empty).transform([&called](const int&& value) {
+				called = true;
+				return std::to_string(value);
+			});
 
-	// GIVEN("an empty Maybe")
-	// {
-	// 	Maybe<int> dut;
+			THEN("the result is an empty Maybe")
+			{
+				CHECK_FALSE(called);
+				CHECK_FALSE(result.has_value());
+				CHECK_FALSE(const_empty.has_value());
+			}
+		}
 
-	// 	WHEN("calling and_then")
-	// 	{
-	// 		bool called = false;
-	// 		auto result = dut.and_then([&called](int value) {
-	// 			called = true;
-	// 			return Maybe<std::string>(std::to_string(value));
-	// 		});
+		WHEN("or_else (lvalue)")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
 
-	// 		THEN("the callback is not invoked and the result is empty")
-	// 		{
-	// 			CHECK_FALSE(called);
-	// 			CHECK_FALSE(result.has_value());
-	// 		}
-	// 	}
+			auto result = dut.or_else(fallback);
 
-	// 	WHEN("calling transform")
-	// 	{
-	// 		bool called = false;
-	// 		auto result = dut.transform([&called](int value) {
-	// 			called = true;
-	// 			return std::to_string(value);
-	// 		});
+			THEN("the result is the fallback Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
+				CHECK(fallback_called);
+				CHECK_FALSE(dut.has_value());
+			}
+		}
 
-	// 		THEN("the callback is not invoked and the result is empty")
-	// 		{
-	// 			CHECK_FALSE(called);
-	// 			CHECK_FALSE(result.has_value());
-	// 		}
-	// 	}
-	// }
+		WHEN("or_else (rvalue)")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
+
+			auto result = std::move(dut).or_else(fallback);
+
+			THEN("the fallback is used for an empty rvalue Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 0; }, [](std::nullopt_t) { return false; }));
+				CHECK(fallback_called);
+				CHECK_FALSE(dut.has_value());
+			}
+		}
+	}
+
+	GIVEN("an engaged Maybe")
+	{
+		Maybe<int> dut{11};
+
+		WHEN("and_then (lvalue)")
+		{
+			auto int_to_maybe_string = [](int& value) {
+				++value;
+				return Maybe<std::string>(std::to_string(value));
+			};
+			auto result = dut.and_then(int_to_maybe_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "12"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 12; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("and_then (const lvalue)")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_maybe_string = [](const int& value) { return Maybe<std::string>(std::to_string(value)); };
+			auto result = const_dut.and_then(int_to_maybe_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+				CHECK(const_dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("and_then (rvalue)")
+		{
+			auto int_to_maybe_string = [](int&& value) { return Maybe<std::string>(std::to_string(value)); };
+			auto result = std::move(dut).and_then(int_to_maybe_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("and_then (const rvalue)")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_maybe_string = [](const int&& value) { return Maybe<std::string>(std::to_string(value)); };
+			auto result = std::move(const_dut).and_then(int_to_maybe_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+				CHECK(const_dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("transform (lvalue)")
+		{
+			auto int_to_string = [](int& value) {
+				++value;
+				return std::to_string(value);
+			};
+			auto result = dut.transform(int_to_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "12"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 12; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("transform (const lvalue)")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_string = [](const int& value) { return std::to_string(value); };
+			auto result = const_dut.transform(int_to_string);
+
+			THEN("the result is a Maybe with the transformed value and the source is unchanged")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+				CHECK(const_dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("transform (rvalue)")
+		{
+			auto int_to_string = [](int&& value) { return std::to_string(value); };
+			auto result = std::move(dut).transform(int_to_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("transform (rvalue moves a non-trivial payload)")
+		{
+			Maybe<DefaultConstructible> movable{DefaultConstructible{37}};
+			auto move_value = [](DefaultConstructible&& value) { return std::move(value); };
+			auto result = std::move(movable).transform(move_value);
+
+			THEN("the callback receives an rvalue and the source remains engaged")
+			{
+				CHECK(movable.has_value());
+				movable.match([](const DefaultConstructible& value) { CHECK(value.m_method == Method::MovedFrom); },
+							  [](std::nullopt_t) { CHECK(false); });
+				result.match(
+					[](const DefaultConstructible& value) {
+						CHECK(value.m_value == 37);
+						CHECK(value.m_method == Method::MoveConstructed);
+					},
+					[](std::nullopt_t) { CHECK(false); });
+			}
+		}
+
+		WHEN("transform (const rvalue)")
+		{
+			const Maybe<int> const_dut{11};
+			auto int_to_string = [](const int&& value) { return std::to_string(value); };
+			auto result = std::move(const_dut).transform(int_to_string);
+
+			THEN("the result is a Maybe with the transformed value")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](const std::string& str) { return str == "11"; },
+								   [](std::nullopt_t) { return false; }));
+				CHECK(const_dut.has_value());
+			}
+		}
+
+		WHEN("or_else (lvalue)")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
+
+			auto result = dut.or_else(fallback);
+
+			THEN("the result is the original Maybe")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+				CHECK_FALSE(fallback_called);
+				CHECK(dut.has_value());
+				CHECK(dut.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+			}
+		}
+
+		WHEN("or_else (rvalue)")
+		{
+			bool fallback_called = false;
+			auto fallback = [&fallback_called]() {
+				fallback_called = true;
+				return Maybe<int>(0);
+			};
+
+			auto result = std::move(dut).or_else(fallback);
+
+			THEN("the result is the original Maybe and fallback is not used")
+			{
+				CHECK(result.has_value());
+				CHECK(result.match([](int value) { return value == 11; }, [](std::nullopt_t) { return false; }));
+				CHECK_FALSE(fallback_called);
+				CHECK_FALSE(dut.has_value());
+			}
+		}
+	}
 }
 
-SCENARIO("Maybe: cvref overload dispatch")
+SCENARIO("Maybe: specialized algorithms")
 {
-	// WHEN("calling value_or on const lvalue with a value")
-	// {
-	// 	const Maybe<DefaultConstructible> dut{DefaultConstructible{55}};
+	WHEN("swap")
+	{
+		Maybe<DefaultConstructible> maybe1{DefaultConstructible{1}};
+		Maybe<DefaultConstructible> maybe2{DefaultConstructible{2}};
 
-	// 	auto result = dut.value_or(DefaultConstructible{66});
+		std::swap(maybe1, maybe2);
 
-	// 	THEN("the stored value is returned")
-	// 	{
-	// 		CHECK(result.m_value == 55);
-	// 	}
-	// }
+		THEN("The values have swapped")
+		{
+			CHECK(maybe1.has_value());
+			CHECK(maybe1.match([](const DefaultConstructible& value) { return value.m_value == 2; },
+							   [](std::nullopt_t) { return false; }));
 
-	// WHEN("calling transform overloads with a value")
-	// {
-	// 	bool called_lvalue = false;
-	// 	bool called_const_lvalue = false;
-	// 	bool called_rvalue = false;
-	// 	bool called_const_rvalue = false;
+			CHECK(maybe2.has_value());
+			CHECK(maybe2.match([](const DefaultConstructible& value) { return value.m_value == 1; },
+							   [](std::nullopt_t) { return false; }));
+		}
+	}
 
-	// 	Maybe<DefaultConstructible> dut_lvalue{DefaultConstructible{21}};
-	// 	const Maybe<DefaultConstructible> dut_const_lvalue{DefaultConstructible{22}};
-	// 	Maybe<DefaultConstructible> dut_rvalue{DefaultConstructible{23}};
-	// 	const Maybe<DefaultConstructible> dut_const_rvalue{DefaultConstructible{24}};
+	WHEN("make_maybe with moved object")
+	{
+		auto maybe = make_maybe(DefaultConstructible{1});
 
-	// 	auto result_lvalue = dut_lvalue.transform([&called_lvalue](DefaultConstructible& value) {
-	// 		called_lvalue = true;
-	// 		++value.m_value;
-	// 		return value.m_value;
-	// 	});
+		THEN("the Maybe is engaged and contains the moved object")
+		{
+			CHECK(maybe.has_value());
+			CHECK(maybe.match([](const DefaultConstructible& value) { return value.m_value == 1; },
+							  [](std::nullopt_t) { return false; }));
+		}
+	}
 
-	// 	auto result_const_lvalue =
-	// 		dut_const_lvalue.transform([&called_const_lvalue](const DefaultConstructible& value) {
-	// 			called_const_lvalue = true;
-	// 			return value.m_value;
-	// 		});
+	WHEN("make_maybe with in-place construction")
+	{
+		auto maybe = make_maybe<DefaultConstructible>(11);
 
-	// 	auto result_rvalue = std::move(dut_rvalue).transform([&called_rvalue](DefaultConstructible&& value) {
-	// 		called_rvalue = true;
-	// 		return value.m_value;
-	// 	});
+		THEN("the Maybe is engaged and contains the value")
+		{
+			CHECK(maybe.has_value());
+			CHECK(maybe.match([](const DefaultConstructible& value) { return value.m_value == 11; },
+							  [](std::nullopt_t) { return false; }));
+		}
+	}
 
-	// 	auto result_const_rvalue =
-	// 		std::move(dut_const_rvalue).transform([&called_const_rvalue](const DefaultConstructible&& value) {
-	// 			called_const_rvalue = true;
-	// 			return value.m_value;
-	// 		});
+	WHEN("make_maybe with initializer list")
+	{
+		auto maybe = make_maybe<std::vector<int>>({42, 11, 1, 3});
 
-	// 	THEN("all overload callbacks are invoked")
-	// 	{
-	// 		CHECK(called_lvalue);
-	// 		CHECK(called_const_lvalue);
-	// 		CHECK(called_rvalue);
-	// 		CHECK(called_const_rvalue);
-
-	// 		CHECK(result_lvalue.match([](int value) { return value == 22; }, [](std::nullopt_t) { return false; }));
-	// 		CHECK(
-	// 			result_const_lvalue.match([](int value) { return value == 22; }, [](std::nullopt_t) { return false;
-	// })); 		CHECK(result_rvalue.match([](int value) { return value == 23; }, [](std::nullopt_t) { return
-	// false;
-	// })); 		CHECK( 			result_const_rvalue.match([](int value) { return value == 24; },
-	// [](std::nullopt_t) { return false;
-	// }));
-	// 	}
-	// }
+		THEN("the Maybe is engaged and contains the value")
+		{
+			CHECK(maybe.has_value());
+			CHECK(maybe.match([](const std::vector<int>& value) { return value.size() == 4; },
+							  [](std::nullopt_t) { return false; }));
+		}
+	}
 }
