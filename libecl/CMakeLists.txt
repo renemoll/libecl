@@ -56,7 +56,7 @@ if(PROJECT_IS_TOP_LEVEL)
 
 	install(
 		FILES
-			"${CMAKE_CURRENT_LIST_DIR}/cmake/libeclConfg.cmake"
+			"${CMAKE_CURRENT_LIST_DIR}/cmake/libeclConfig.cmake"
 		DESTINATION
 			"share/cmake/libecl"
 	)
