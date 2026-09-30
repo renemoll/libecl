@@ -34,11 +34,11 @@ SCENARIO("ByteWriter: write data")
 
 				bool data = true;
 				writer << data;
-				REQUIRE(data_buffer[7] == std::byte{0x01});
+				CHECK(data_buffer[7] == std::byte{0x01});
 
 				writer.skip(12);
 				writer << data;
-				REQUIRE(data_buffer[20] == std::byte{0x01});
+				CHECK(data_buffer[20] == std::byte{0x01});
 			}
 
 			THEN("can write unsigned integers")
@@ -53,7 +53,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x12}, std::byte{0x34}, std::byte{0x56}, std::byte{0x78},
 					std::byte{0x98}, std::byte{0x76}, std::byte{0x54},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -70,7 +70,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x12}, std::byte{0x34}, std::byte{0x56}, std::byte{0x78},
 					std::byte{0x98}, std::byte{0x76}, std::byte{0x54},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -86,7 +86,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x60},
 					std::byte{0x42},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -100,7 +100,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x40}, std::byte{0x1a}, std::byte{0x2c}, std::byte{0x08},
 					std::byte{0x31}, std::byte{0x26}, std::byte{0xe9}, std::byte{0x79},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -116,11 +116,11 @@ SCENARIO("ByteWriter: write data")
 
 				bool data = true;
 				writer << data;
-				REQUIRE(data_buffer[7] == std::byte{0x01});
+				CHECK(data_buffer[7] == std::byte{0x01});
 
 				writer.skip(12);
 				writer << data;
-				REQUIRE(data_buffer[20] == std::byte{0x01});
+				CHECK(data_buffer[20] == std::byte{0x01});
 			}
 
 			THEN("can write unsigned integers")
@@ -135,7 +135,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x78}, std::byte{0x56}, std::byte{0x34}, std::byte{0x12},
 					std::byte{0x98}, std::byte{0x54}, std::byte{0x76},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -152,7 +152,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x78}, std::byte{0x56}, std::byte{0x34}, std::byte{0x12},
 					std::byte{0x98}, std::byte{0x54}, std::byte{0x76},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -168,7 +168,7 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0xd1},
 					std::byte{0x40},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
@@ -182,10 +182,12 @@ SCENARIO("ByteWriter: write data")
 					std::byte{0x79}, std::byte{0xe9}, std::byte{0x26}, std::byte{0x31},
 					std::byte{0x08}, std::byte{0x2c}, std::byte{0x1a}, std::byte{0x40},
 				};
-				REQUIRE(data_buffer.size() >= expected.size());
+				CHECK(data_buffer.size() >= expected.size());
 				const auto data_view = std::span{data_buffer}.subspan(0, expected.size());
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
 		}
 	}
+
+	// TODO: write past buffer
 }

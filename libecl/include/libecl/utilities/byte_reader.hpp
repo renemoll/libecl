@@ -12,6 +12,8 @@
 
 #include <algorithm>
 #include <bit>
+#include <cassert>
+#include <cstring>
 #include <span>
 
 namespace libecl::utilities {
@@ -30,9 +32,8 @@ public:
 	 * \param data_buffer Buffer to extract data from.
 	 * \param endianness  Endianness of the data in \a data_buffer.
 	 */
-	ByteReader(std::span<const std::byte> data_buffer, std::endian endianness)
+	constexpr ByteReader(std::span<const std::byte> data_buffer, std::endian endianness)
 		: m_data{data_buffer}
-		, m_available{data_buffer}
 		, m_endianness{endianness}
 	{
 	}
@@ -45,14 +46,14 @@ public:
 	 * \post   Advances the internal offset counter such that the next read operation extracts the next data element.
 	 */
 	template <typename T>
-	ByteReader& operator>>(T& data)
+	constexpr ByteReader& operator>>(T& data)
 	{
 		if (!can_fit<T>()) {
 			return *this;
 		}
 
 		extract_value(data);
-		m_available = m_available.subspan(sizeof(T));
+		m_data = m_data.subspan(sizeof(T));
 		return *this;
 	}
 
@@ -60,32 +61,25 @@ public:
 	 * \brief Advance the internal offset to skip \a count bytes.
 	 * \param count The number of bytes to skip (or the maximum available, whichever is smaller.)
 	 */
-	void skip(std::size_t count) noexcept
+	constexpr void skip(std::size_t count) noexcept
 	{
-		const auto max = std::min(count, m_available.size());
-		m_available = m_available.subspan(max);
+		const auto max = std::min(count, m_data.size());
+		m_data = m_data.subspan(max);
 	}
 
 private:
 	std::span<const std::byte> m_data;
-	std::span<const std::byte> m_available;
 	std::endian m_endianness;
 
-	//! \brief Returns the number of bytes in the data buffer.
-	[[nodiscard]] std::size_t capacity() const noexcept
+	//! \brief Returns the number of bytes still available to extract.
+	[[nodiscard]] constexpr std::size_t available_size() const noexcept
 	{
 		return m_data.size();
 	}
 
-	//! \brief Returns the number of bytes still available to extract.
-	[[nodiscard]] std::size_t available_size() const noexcept
-	{
-		return capacity() - std::distance(m_data.begin(), m_available.begin());
-	}
-
 	//! \brief Returns true if the requested type can fit in the available bytes, false otherwise.
 	template <typename T>
-	[[nodiscard]] bool can_fit() const
+	[[nodiscard]] constexpr bool can_fit() const noexcept
 	{
 		return available_size() >= sizeof(T);
 	}
@@ -94,15 +88,24 @@ private:
 	 * \brief  Extracts a element of the requested type with the correct endianness.
 	 * \tparam T     Type of the data element to extract.
 	 * \param  value Reference to a variable to store the extracted element.
+	 * \note   Could use std::byteswap for integral types if available.
 	 */
 	template <typename T>
-	void extract_value(T& value)
+	constexpr void extract_value(T& value)
 	{
-		const auto as_bytes = reinterpret_cast<std::byte*>(&value);
+		if constexpr (sizeof(T) == 1) {
+			std::memcpy(&value, m_data.data(), sizeof(T));
+			return;
+		}
+
 		if (m_endianness == std::endian::native) {
-			std::copy(m_available.begin(), m_available.begin() + sizeof(T), as_bytes);
+			// Note: using memcpy here to copy directly from the buffer and start the object's lifetime.
+			std::memcpy(&value, m_data.data(), sizeof(T));
 		} else {
-			std::reverse_copy(m_available.begin(), m_available.begin() + sizeof(T), as_bytes);
+			auto value_representation = std::array<std::byte, sizeof(T)>{};
+			std::memcpy(value_representation.data(), m_data.data(), sizeof(T));
+			std::ranges::reverse(value_representation);
+			value = std::bit_cast<T>(value_representation);
 		}
 	}
 };
