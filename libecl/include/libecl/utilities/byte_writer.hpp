@@ -30,9 +30,8 @@ public:
 	 * \param data_buffer Buffer to write data into.
 	 * \param endianness  Endianness of the data in \a data_buffer.
 	 */
-	ByteWriter(std::span<std::byte> data_buffer, std::endian endianness)
+	constexpr ByteWriter(std::span<std::byte> data_buffer, std::endian endianness)
 		: m_data{data_buffer}
-		, m_available{data_buffer}
 		, m_endianness{endianness}
 	{
 	}
@@ -46,14 +45,14 @@ public:
 	 *         area.
 	 */
 	template <typename T>
-	ByteWriter& operator<<(T data)
+	constexpr ByteWriter& operator<<(const T& data)
 	{
 		if (!can_fit<T>()) {
 			return *this;
 		}
 
 		write_value(data);
-		m_available = m_available.subspan(sizeof(T));
+		m_data = m_data.subspan(sizeof(T));
 		return *this;
 	}
 
@@ -61,49 +60,42 @@ public:
 	 * \brief Advance the internal offset to skip \a count bytes.
 	 * \param count The number of bytes to skip (or the maximum available, whichever is smaller.)
 	 */
-	void skip(std::size_t count) noexcept
+	constexpr void skip(std::size_t count) noexcept
 	{
-		const auto max = std::min(count, m_available.size());
-		m_available = m_available.subspan(max);
+		const auto max = std::min(count, m_data.size());
+		m_data = m_data.subspan(max);
 	}
 
 private:
 	std::span<std::byte> m_data;
-	std::span<std::byte> m_available;
 	std::endian m_endianness;
 
-	//! \brief Returns the number of bytes in the data buffer.
-	[[nodiscard]] std::size_t capacity() const noexcept
+	//! \brief Returns the number of bytes still available to write.
+	[[nodiscard]] constexpr std::size_t available_size() const noexcept
 	{
 		return m_data.size();
 	}
 
-	//! \brief Returns the number of bytes still available to extract.
-	[[nodiscard]] std::size_t available_size() const noexcept
-	{
-		return capacity() - std::distance(m_data.begin(), m_available.begin());
-	}
-
 	//! \brief Returns true if the requested type can fit in the available bytes, false otherwise.
 	template <typename T>
-	[[nodiscard]] bool can_fit() const
+	[[nodiscard]] constexpr bool can_fit() const noexcept
 	{
 		return available_size() >= sizeof(T);
 	}
 
 	/*!
-	 * \brief  Extracts a element of the requested type with the correct endianness.
-	 * \tparam T     Type of the data element to extract.
-	 * \param  value Reference to a variable to store the extracted element.
+	 * \brief  Writes an element of the requested type with the correct endianness.
+	 * \tparam T     Type of the data element to write.
+	 * \param  value Element to store into the buffer.
 	 */
 	template <typename T>
-	void write_value(T value)
+	constexpr void write_value(const T& value) noexcept
 	{
-		const auto as_bytes = reinterpret_cast<std::byte*>(&value);
+		const auto* const as_bytes = reinterpret_cast<const std::byte*>(&value);
 		if (m_endianness == std::endian::native) {
-			std::copy(as_bytes, as_bytes + sizeof(T), m_available.begin());
+			std::copy(as_bytes, std::next(as_bytes, sizeof(T)), m_data.begin());
 		} else {
-			std::reverse_copy(as_bytes, as_bytes + sizeof(T), m_available.begin());
+			std::reverse_copy(as_bytes, std::next(as_bytes, sizeof(T)), m_data.begin());
 		}
 	}
 };

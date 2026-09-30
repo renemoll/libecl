@@ -36,11 +36,11 @@ SCENARIO("ByteReader: read data")
 
 				bool data = false;
 				reader >> data;
-				REQUIRE(data);
+				CHECK(data);
 
 				reader.skip(12);
 				reader >> data;
-				REQUIRE_FALSE(data);
+				CHECK_FALSE(data);
 			}
 
 			THEN("can extract unsigned integers")
@@ -50,9 +50,9 @@ SCENARIO("ByteReader: read data")
 				uint8_t data8 = 0;
 
 				reader >> data32 >> data8 >> data16;
-				REQUIRE(data32 == 0x12345678);
-				REQUIRE(data8 == 0x98);
-				REQUIRE(data16 == 0x7654);
+				CHECK(data32 == 0x12345678);
+				CHECK(data8 == 0x98);
+				CHECK(data16 == 0x7654);
 			}
 
 			THEN("can extract signed integers")
@@ -62,9 +62,9 @@ SCENARIO("ByteReader: read data")
 				int8_t data8 = 0;
 
 				reader >> data32 >> data8 >> data16;
-				REQUIRE(data32 == 0x12345678);
-				REQUIRE(data8 == -104);
-				REQUIRE(data16 == 0x7654);
+				CHECK(data32 == 0x12345678);
+				CHECK(data8 == -104);
+				CHECK(data16 == 0x7654);
 			}
 
 			THEN("can extract single precision floating-point values")
@@ -96,11 +96,11 @@ SCENARIO("ByteReader: read data")
 
 				bool data = false;
 				reader >> data;
-				REQUIRE(data);
+				CHECK(data);
 
 				reader.skip(12);
 				reader >> data;
-				REQUIRE_FALSE(data);
+				CHECK_FALSE(data);
 			}
 
 			THEN("can extract unsigned integers")
@@ -110,9 +110,9 @@ SCENARIO("ByteReader: read data")
 				uint8_t data8 = 0;
 
 				reader >> data32 >> data8 >> data16;
-				REQUIRE(data32 == 0x78563412);
-				REQUIRE(data8 == 0x98);
-				REQUIRE(data16 == 0x5476);
+				CHECK(data32 == 0x78563412);
+				CHECK(data8 == 0x98);
+				CHECK(data16 == 0x5476);
 			}
 
 			THEN("can extract signed integers")
@@ -122,9 +122,9 @@ SCENARIO("ByteReader: read data")
 				int8_t data8 = 0;
 
 				reader >> data32 >> data8 >> data16;
-				REQUIRE(data32 == 0x78563412);
-				REQUIRE(data8 == -104);
-				REQUIRE(data16 == 0x5476);
+				CHECK(data32 == 0x78563412);
+				CHECK(data8 == -104);
+				CHECK(data16 == 0x5476);
 			}
 
 			THEN("can extract single precision floating-point values")
@@ -146,4 +146,6 @@ SCENARIO("ByteReader: read data")
 			}
 		}
 	}
+
+	// TODO: read past buffer
 }
