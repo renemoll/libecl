@@ -395,22 +395,33 @@ public:
 	 * \brief Pattern matching type accessor.
 	 * \param matchers: a set of callable objects, each accepting a single argument of type T or std::nullopt_t.
 	 */
-	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 2)
-	[[nodiscard]] constexpr decltype(auto) match(Matchers&&... matchers)
+	template <class First, class Second>
+		requires((std::is_invocable_v<First, T&> && std::is_invocable_v<Second, std::nullopt_t&>) ||
+				 (std::is_invocable_v<Second, T&> && std::is_invocable_v<First, std::nullopt_t&>)) &&
+				requires {
+					details::Overload{std::declval<First>(), std::declval<Second>()}(std::declval<T&>());
+					details::Overload{std::declval<First>(), std::declval<Second>()}(std::declval<std::nullopt_t&>());
+				}
+	[[nodiscard]] constexpr decltype(auto) match(First&& first, Second&& second)
 	{
-		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::Overload{std::forward<First>(first), std::forward<Second>(second)}, m_storage);
 	}
 
 	/*!
 	 * \brief Pattern matching type accessor.
 	 * \param matchers: a set of callable objects, each accepting a single argument of type T or std::nullopt_t.
 	 */
-	template <class... Matchers>
-		requires(sizeof...(Matchers) >= 2)
-	[[nodiscard]] constexpr decltype(auto) match(Matchers&&... matchers) const
+	template <class First, class Second>
+		requires((std::is_invocable_v<First, const T&> && std::is_invocable_v<Second, const std::nullopt_t&>) ||
+				 (std::is_invocable_v<Second, const T&> && std::is_invocable_v<First, const std::nullopt_t&>)) &&
+				requires {
+					details::Overload{std::declval<First>(), std::declval<Second>()}(std::declval<const T&>());
+					details::Overload{std::declval<First>(), std::declval<Second>()}(
+						std::declval<const std::nullopt_t&>());
+				}
+	[[nodiscard]] constexpr decltype(auto) match(First&& first, Second&& second) const
 	{
-		return std::visit(details::Overload{std::forward<Matchers>(matchers)...}, m_storage);
+		return std::visit(details::Overload{std::forward<First>(first), std::forward<Second>(second)}, m_storage);
 	}
 
 	/*!

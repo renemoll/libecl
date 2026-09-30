@@ -430,6 +430,60 @@ static_assert(MaybeIntTransformCallable<ReturnsInt>);
 static_assert(!MaybeIntTransformCallable<ReturnsVoid>);
 static_assert(!MaybeIntOrElseCallable<ReturnsIntFallback>);
 static_assert(MaybeIntOrElseCallable<ReturnsMaybeIntFallback>);
+
+struct MatchValue
+{
+	bool operator()(int&) const
+	{
+		return true;
+	}
+};
+
+struct MatchConstValue
+{
+	bool operator()(const int&) const
+	{
+		return true;
+	}
+};
+
+struct MatchEmpty
+{
+	bool operator()(std::nullopt_t) const
+	{
+		return false;
+	}
+};
+
+struct MatchGenericOne
+{
+	template <class U>
+	bool operator()(U&&) const
+	{
+		return true;
+	}
+};
+
+struct MatchGenericTwo
+{
+	template <class U>
+	bool operator()(U&&) const
+	{
+		return false;
+	}
+};
+
+template <class M, class... F>
+concept MaybeMatchCallable = requires(M& value, F... handlers) { value.match(handlers...); };
+
+static_assert(MaybeMatchCallable<Maybe<int>, MatchValue, MatchEmpty>);
+static_assert(MaybeMatchCallable<Maybe<int>, MatchEmpty, MatchValue>);
+static_assert(!MaybeMatchCallable<Maybe<int>, MatchValue>);
+static_assert(!MaybeMatchCallable<Maybe<int>, MatchValue, MatchEmpty, MatchEmpty>);
+static_assert(!MaybeMatchCallable<Maybe<int>, MatchValue, MatchValue>);
+static_assert(!MaybeMatchCallable<Maybe<int>, MatchGenericOne, MatchGenericTwo>);
+static_assert(MaybeMatchCallable<const Maybe<int>, MatchConstValue, MatchEmpty>);
+static_assert(!MaybeMatchCallable<const Maybe<int>, MatchValue, MatchEmpty>);
 }  // namespace
 
 SCENARIO("Maybe: type traits")
@@ -2379,6 +2433,7 @@ SCENARIO("Maybe: observers")
 			THEN("returns nullopt")
 			{
 				CHECK(dut.match([](int) { return false; }, [](std::nullopt_t) { return true; }));
+				CHECK(dut.match([](std::nullopt_t) { return true; }, [](int) { return false; }));
 			}
 		}
 
@@ -2430,6 +2485,7 @@ SCENARIO("Maybe: observers")
 			THEN("the value can be retrieved")
 			{
 				CHECK(dut.match([](int value) { return value == 44; }, [](std::nullopt_t) { return false; }));
+				CHECK(dut.match([](std::nullopt_t) { return false; }, [](int value) { return value == 44; }));
 			}
 		}
 
