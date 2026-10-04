@@ -2028,7 +2028,12 @@ SCENARIO("Maybe: assignment")
 		WHEN("self-assignment via copy assignment")
 		{
 			Maybe<ExplicitConstructible> dut_explicit(ExplicitConstructible{42});
+#pragma GCC diagnostic push
+#if BOB_COMPILER_CLANG
+#pragma GCC diagnostic ignored "-Wself-assign-overloaded"
+#endif
 			dut_explicit = dut_explicit;
+#pragma GCC diagnostic pop
 
 			THEN("the Maybe is still engaged and contains the same value")
 			{

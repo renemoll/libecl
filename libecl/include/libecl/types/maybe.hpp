@@ -10,6 +10,8 @@
 #ifndef LIBECL_TYPES_MAYBE_HPP
 #define LIBECL_TYPES_MAYBE_HPP
 
+#include "libecl/config_options.hpp"
+
 #include <cassert>
 #include <functional>
 #include <optional>
@@ -120,7 +122,12 @@ public:
 		: m_storage(std::nullopt)
 	{
 		if (rhs.has_value()) {
+#pragma GCC diagnostic push
+#if BOB_COMPILER_GCC
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 			m_storage.template emplace<value_type>(std::move(*std::get_if<T>(&rhs.m_storage)));
+#pragma GCC diagnostic pop
 			rhs.reset();
 		}
 	}
@@ -154,33 +161,28 @@ public:
 	template <typename U = std::remove_cvref_t<T>>
 	constexpr explicit Maybe(U&& value)
 		requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> /*&& !std::is_convertible_v<U, T>*/)
+				 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe>)
 		: m_storage(std::in_place_type<T>, std::forward<U>(value))
 	{
 	}
-
-	// /*!
-	//  * \brief Non-explicit converting move from value constructor.
-	//  */
-	// template <typename U = std::remove_cvref_t<T>>
-	// constexpr Maybe(U&& value)
-	// 	requires(std::is_constructible_v<T, U> && !std::is_same_v<typename std::remove_cvref_t<U>, std::in_place_t> &&
-	// 			 !std::is_same_v<typename std::remove_cvref_t<U>, Maybe> && std::is_convertible_v<U, T>)
-	// 	: m_storage(std::in_place_type<T>, std::forward<U>(value))
-	// {
-	// }
 
 	/*!
 	 * \brief Explicit converting copy constructor.
 	 */
 	template <typename U>
 	constexpr explicit Maybe(Maybe<U> const& rhs)
-		requires(std::is_constructible_v<T, const U&> && !converts_from_any_cvref<T, Maybe<U>> /* &&
-				 !std::is_convertible_v<const U&, T>*/)
+		requires(std::is_constructible_v<T, const U&> && !converts_from_any_cvref<T, Maybe<U>>)
 		: m_storage(std::nullopt)
 	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			m_storage.template emplace<value_type>(*val);
+		if (rhs.has_value()) {
+			if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
+#pragma GCC diagnostic push
+#if BOB_COMPILER_GCC
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+				m_storage.template emplace<value_type>(*val);
+#pragma GCC diagnostic pop
+			}
 		}
 	}
 
@@ -190,14 +192,20 @@ public:
 	 */
 	template <typename U>
 	constexpr explicit Maybe(Maybe<U>&& rhs)
-		requires(std::is_constructible_v<T, U> &&
-				 !converts_from_any_cvref<T, Maybe<U>> /*&& !std::is_convertible_v<U, T>*/)
+		requires(std::is_constructible_v<T, U> && !converts_from_any_cvref<T, Maybe<U>>)
 		: m_storage(std::nullopt)
 	{
-		if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
-			std::ignore = val;
-			m_storage.template emplace<value_type>(std::move(std::get<U>(std::move(rhs.m_storage))));
-			rhs.m_storage = std::nullopt;
+		if (rhs.has_value()) {
+			if (auto const* val = std::get_if<U>(&rhs.m_storage)) {
+				std::ignore = val;
+#pragma GCC diagnostic push
+#if BOB_COMPILER_GCC
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+				m_storage.template emplace<value_type>(std::move(std::get<U>(std::move(rhs.m_storage))));
+#pragma GCC diagnostic pop
+				rhs.m_storage = std::nullopt;
+			}
 		}
 	}
 
@@ -234,7 +242,6 @@ public:
 				m_storage = rhs.m_storage;
 			} else {
 				m_storage.template emplace<value_type>(std::get<value_type>(rhs.m_storage));
-				// m_storage = std::get<value_type>(rhs.m_storage);
 			}
 		} else {
 			reset();
@@ -277,11 +284,8 @@ public:
 	 */
 	template <typename U = std::remove_cvref_t<T>>
 	constexpr Maybe<T>& operator=(U&& rhs)
-		requires(
-			// !std::is_same_v<std::remove_cvref_t<U>, Maybe> &&
-			//  !std::conjunction_v<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>> &&
-			!is_derived_from_maybe<std::remove_cvref_t<U>> && std::is_constructible_v<T, U> &&
-			std::is_assignable_v<T&, U>)
+		requires(!is_derived_from_maybe<std::remove_cvref_t<U>> && std::is_constructible_v<T, U> &&
+				 std::is_assignable_v<T&, U>)
 	{
 		if (has_value()) {
 			std::get<value_type>(m_storage) = std::forward<U>(rhs);
@@ -323,17 +327,12 @@ public:
 	{
 		if (has_value()) {
 			if (rhs.has_value()) {
-				// std::swap(m_storage, rhs.m_storage);
 				m_storage.swap(rhs.m_storage);
 			} else {
-				// rhs.m_storage = std::move(m_storage);
-				// std::swap(m_storage, rhs.m_storage);
 				rhs.m_storage.swap(m_storage);
 				reset();
 			}
 		} else if (rhs.has_value()) {
-			// m_storage = std::move(rhs.m_storage);
-			// std::swap(m_storage, rhs.m_storage);
 			m_storage.swap(rhs.m_storage);
 			rhs.reset();
 		}
@@ -371,8 +370,6 @@ public:
 			return T(std::move(std::get<T>(m_storage)));
 		}
 		return T{std::forward<U>(default_value)};
-		// return match([](T const& value) { return value; },
-		//  [&](std::nullopt_t) { return T{std::forward<U>(default_value)}; });
 	}
 
 	/*!
@@ -416,8 +413,8 @@ public:
 				 (std::is_invocable_v<Second, const T&> && std::is_invocable_v<First, const std::nullopt_t&>)) &&
 				requires {
 					details::Overload{std::declval<First>(), std::declval<Second>()}(std::declval<const T&>());
-					details::Overload{std::declval<First>(), std::declval<Second>()}(
-						std::declval<const std::nullopt_t&>());
+					details::Overload{std::declval<First>(),
+									  std::declval<Second>()}(std::declval<const std::nullopt_t&>());
 				}
 	[[nodiscard]] constexpr decltype(auto) match(First&& first, Second&& second) const
 	{

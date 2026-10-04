@@ -11,6 +11,10 @@ clang-coverage:
 clang-unittest:
 	cmake --workflow --preset unittest-clang-debug
 
+.PHONY: clang-unittest-release
+clang-unittest-release:
+	cmake --workflow --preset unittest-clang-release
+
 .PHONY: gcc-coverage
 gcc-coverage:
 	cmake --workflow --preset coverage-gcc-debug
@@ -18,6 +22,10 @@ gcc-coverage:
 .PHONY: gcc-unittest
 gcc-unittest:
 	cmake --workflow --preset unittest-gcc-debug
+
+.PHONY: gcc-unittest-release
+gcc-unittest-release:
+	cmake --workflow --preset unittest-gcc-release
 
 .PHONY: gcc-m7
 gcc-m7:
