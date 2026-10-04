@@ -145,7 +145,22 @@ SCENARIO("ByteReader: read data")
 				REQUIRE_THAT(data, Catch::Matchers::WithinULP(36.75638580384195, 0));
 			}
 		}
-	}
 
-	// TODO: read past buffer
+		WHEN("reading past the end of the buffer")
+		{
+			auto window = std::span{data_buffer.begin(), 5};
+			auto reader = ByteReader{window, std::endian::little};
+
+			reader.skip(window.size());
+
+			// Attempt to read past the end of the window
+			std::byte value{0xCA};
+			reader >> value;
+
+			THEN("no data is read past the window")
+			{
+				CHECK(value == std::byte{0xCA});
+			}
+		}
+	}
 }

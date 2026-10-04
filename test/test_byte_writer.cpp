@@ -20,7 +20,7 @@ using namespace libecl::utilities;
 
 SCENARIO("ByteWriter: write data")
 {
-	GIVEN("an empty data buffer")
+	GIVEN("an data buffer")
 	{
 		std::array<std::byte, 21> data_buffer{};
 
@@ -187,7 +187,35 @@ SCENARIO("ByteWriter: write data")
 				REQUIRE_THAT(data_view, Catch::Matchers::RangeEquals(expected));
 			}
 		}
-	}
 
-	// TODO: write past buffer
+		WHEN("writing past the end of the buffer")
+		{
+			// Prefill the data buffer with sequential values
+			for (std::size_t i = 0; i < data_buffer.size(); ++i) {
+				data_buffer[i] = std::byte(i);
+			}
+
+			auto window = std::span{data_buffer.begin(), 5};
+			auto writer = ByteWriter{window, std::endian::little};
+
+			// Fill the window with new values
+			for (std::size_t i = 0; i < window.size(); ++i) {
+				writer << std::byte(100 + i);
+			}
+
+			// Attempt to write past the end of the window
+			writer << std::byte(200);
+
+			THEN("no data is written")
+			{
+				for (std::size_t i = 0; i < data_buffer.size(); ++i) {
+					if (i < window.size()) {
+						CHECK(data_buffer[i] == std::byte(100 + i));
+					} else {
+						CHECK(data_buffer[i] == std::byte(i));
+					}
+				}
+			}
+		}
+	}
 }
