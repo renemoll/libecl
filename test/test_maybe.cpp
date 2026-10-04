@@ -2126,7 +2126,9 @@ SCENARIO("Maybe: assignment")
 			Maybe<DefaultConstructible> dut_default(DefaultConstructible{41});
 
 #pragma GCC diagnostic push
+#if BOB_COMPILER_CLANG || (BOB_COMPILER_GCC && __GNUC__ >= 13)
 #pragma GCC diagnostic ignored "-Wself-move"
+#endif
 			dut_default = std::move(dut_default);
 #pragma GCC diagnostic pop
 
