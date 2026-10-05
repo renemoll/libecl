@@ -22,7 +22,10 @@ target_sources(libecl
 			"include/libecl/containers/aligned_storage.hpp"
 			"include/libecl/containers/queue_spsc.hpp"
 			"include/libecl/types/maybe.hpp"
+			"include/libecl/utilities/byte_reader.hpp"
+			"include/libecl/utilities/byte_writer.hpp"
 )
+
 set_target_properties(libecl
 	PROPERTIES
 		LINKER_LANGUAGE CXX

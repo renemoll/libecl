@@ -30,13 +30,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gcc: [10, 11, 12, 13, 14]
+        gcc: [12, 13, 14]
         cxx: [20, 23]
-        exclude:
-          - gcc: 10
-            cxx: 23 # C++23 is not supported by GCC 10
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
   
     env:
       CC: gcc-${{ matrix.gcc }}
@@ -79,7 +76,7 @@ jobs:
         armgcc: ['15.2.Rel1']
         cxx: [20, 23]
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: checkout
