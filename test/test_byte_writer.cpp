@@ -200,11 +200,11 @@ SCENARIO("ByteWriter: write data")
 
 			// Fill the window with new values
 			for (std::size_t i = 0; i < window.size(); ++i) {
-				writer << std::byte(100 + i);
+				writer << uint8_t(100 + i);
 			}
 
 			// Attempt to write past the end of the window
-			writer << std::byte(200);
+			writer << uint8_t(200);
 
 			THEN("no data is written")
 			{

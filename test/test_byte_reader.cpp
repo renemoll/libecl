@@ -154,12 +154,12 @@ SCENARIO("ByteReader: read data")
 			reader.skip(window.size());
 
 			// Attempt to read past the end of the window
-			std::byte value{0xCA};
+			uint8_t value{0xCA};
 			reader >> value;
 
 			THEN("no data is read past the window")
 			{
-				CHECK(value == std::byte{0xCA});
+				CHECK(value == 0xCA);
 			}
 		}
 	}

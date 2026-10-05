@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <iterator>
 #include <span>
 
 namespace libecl::utilities {
@@ -37,7 +38,7 @@ public:
 	}
 
 	/*!
-	 * \brief  Write a single data element from the data buffer.
+	 * \brief  Write a single data element into the data buffer.
 	 * \tparam T    Type of the data element to write.
 	 * \param  data Element to store into the buffer.
 	 * \return The current ByteWriter instance.
@@ -46,8 +47,10 @@ public:
 	 */
 	template <typename T>
 	constexpr ByteWriter& operator<<(const T& data)
+		requires(std::is_arithmetic_v<T>)
 	{
 		if (!can_fit<T>()) {
+			skip(sizeof(T));
 			return *this;
 		}
 

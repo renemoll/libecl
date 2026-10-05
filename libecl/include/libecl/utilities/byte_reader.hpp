@@ -11,8 +11,10 @@
 #define LIBECL_UTILITIES_BYTE_READER_H
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <span>
 
@@ -47,8 +49,10 @@ public:
 	 */
 	template <typename T>
 	constexpr ByteReader& operator>>(T& data)
+		requires(std::is_arithmetic_v<T>)
 	{
 		if (!can_fit<T>()) {
+			skip(sizeof(T));
 			return *this;
 		}
 
@@ -94,7 +98,13 @@ private:
 	constexpr void extract_value(T& value)
 	{
 		if constexpr (sizeof(T) == 1) {
-			std::memcpy(&value, m_data.data(), sizeof(T));
+			if constexpr (std::is_same_v<T, bool>) {
+				uint8_t dummy = 0;
+				std::memcpy(&dummy, m_data.data(), sizeof(T));
+				value = (dummy != 0);
+			} else {
+				std::memcpy(&value, m_data.data(), sizeof(T));
+			}
 			return;
 		}
 
