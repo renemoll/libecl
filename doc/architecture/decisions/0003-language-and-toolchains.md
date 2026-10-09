@@ -41,8 +41,8 @@ This library will be tested with ARM Cortex-M series microcontrollers, including
 
 At the time of writing, the following toolchain versions are supported:
 
-* For GCC (hosted and bare metal): 13, 14, 15, 16
-* For Clang (hosted and bare metal): 20, 21, 22, 23
+* For GCC (x64 and bare metal): 13, 14, 15, 16
+* For Clang (x64 and bare metal): 20, 21, 22, 23
 * For Arm GNU Toolchain: 13, 14, 15
 
 The aim is to always use the latest version of a specific release series in the CI builds.
