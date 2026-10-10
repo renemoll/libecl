@@ -11,6 +11,9 @@ on:
   schedule:
     - cron: '25 1 * * SUN' # every Sunday at 01:25
 
+env:
+  CATCH2_VERSION: 3.16.1
+
 jobs:
   build-linux-gcc:
     strategy:
@@ -37,7 +40,10 @@ jobs:
       - name: bootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install clang-tidy cmake ninja-build g++-${{ matrix.gcc }} cppcheck flawfinder catch2 iwyu
+          sudo apt-get install clang-tidy cmake ninja-build g++-${{ matrix.gcc }} cppcheck flawfinder iwyu
+          wget -qO - https://github.com/catchorg/Catch2/archive/refs/tags/v${CATCH2_VERSION}.tar.gz | tar xz -C /tmp && \
+          cmake -S /tmp/Catch2-${CATCH2_VERSION} -B /tmp/Catch2-${CATCH2_VERSION}/build && \
+          sudo cmake --build /tmp/Catch2-${CATCH2_VERSION}/build --target install
 
       - name: Debug build & test
         run: |
@@ -64,6 +70,8 @@ jobs:
       matrix:
         clang: [20, 21, 22, 23]
         cxx: [20, 23, 26]
+        exclude:
+          - clang: 23 # not (yet) available in Ubuntu 26.04
 
     runs-on: ubuntu-26.04
 
@@ -80,7 +88,10 @@ jobs:
       - name: bootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install clang-tidy cmake ninja-build clang-${{ matrix.clang }} cppcheck flawfinder catch2 iwyu
+          sudo apt-get install clang-tidy cmake ninja-build clang-${{ matrix.clang }} cppcheck flawfinder iwyu wget
+          wget -qO - https://github.com/catchorg/Catch2/archive/refs/tags/v${CATCH2_VERSION}.tar.gz | tar xz -C /tmp && \
+          cmake -S /tmp/Catch2-${CATCH2_VERSION} -B /tmp/Catch2-${CATCH2_VERSION}/build && \
+          sudo cmake --build /tmp/Catch2-${CATCH2_VERSION}/build --target install
 
       - name: Debug build & test
         run: |
