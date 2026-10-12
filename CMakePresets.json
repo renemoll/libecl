@@ -1,10 +1,10 @@
 {
 	"version": 6,
 	"include": [
-	  "cmake/presets_environment.json",
-	  "cmake/presets_build_types.json",
-	  "cmake/presets_generators.json",
-	  "cmake/presets_toolchains.json"
+	  "cmake/bob-cmake/presets/presets_environment.json",
+	  "cmake/bob-cmake/presets/presets_build_types.json",
+	  "cmake/bob-cmake/presets/presets_generators.json",
+	  "cmake/bob-cmake/presets/presets_toolchains.json"
 	],
 	"configurePresets": [
 		{

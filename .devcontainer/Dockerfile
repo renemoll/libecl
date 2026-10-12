@@ -7,14 +7,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
-ARG CATCH2_VERSION=3.14.0
-ARG CLANG_VERSION=19
-ARG GCC_VERSION=14
-ARG GCC_ARM_VERSION=15.2.rel1
+ARG CATCH2_VERSION=3.16.1
+ARG CLANG_VERSION=22
+ARG GCC_VERSION=16
+ARG GCC_ARM_VERSION=15.3.rel2
 # Note: beware to match the version of include-what-you-use with the clang version
-ARG INCLUDE_WHAT_YOU_USE_VERSION=0.23
+ARG INCLUDE_WHAT_YOU_USE_VERSION=0.26
 
 ARG USER_NAME=dev
 ARG USER_UID=1000
@@ -47,7 +47,7 @@ RUN apt-get update && \
 #
 
 RUN mkdir /opt/gcc-arm-none-eabi \
- && wget -qO - "https://developer.arm.com/-/media/Files/downloads/gnu/${GCC_ARM_VERSION}/binrel/arm-gnu-toolchain-${GCC_ARM_VERSION}-$(uname -m)-arm-none-eabi.tar.xz" | tar --strip-components=1 -xJC /opt/gcc-arm-none-eabi
+ && wget -qO - "https://gitlab.arm.com/api/v4/projects/tooling%2Fgnu-toolchains-for-arm/packages/generic/gnu-toolchain/${GCC_ARM_VERSION}/arm-gnu-toolchain-${GCC_ARM_VERSION}-$(uname -m)-arm-none-eabi.tar.xz" | tar --strip-components=1 -xJC /opt/gcc-arm-none-eabi
 ENV PATH="$PATH:/opt/gcc-arm-none-eabi/bin"
 
 #
