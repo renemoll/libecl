@@ -17,6 +17,7 @@ target_sources(unittests
 		test_aligned_storage.cpp
 		test_byte_reader.cpp
 		test_byte_writer.cpp
+		test_checksum.cpp
 		test_queue_spsc.cpp
 		test_maybe.cpp
 )

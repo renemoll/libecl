@@ -26,6 +26,11 @@ target_sources(libecl
 			"include/libecl/utilities/byte_writer.hpp"
 )
 
+target_sources(libecl
+	PRIVATE
+		"src/checksum.cpp"
+)
+
 set_target_properties(libecl
 	PROPERTIES
 		LINKER_LANGUAGE CXX
