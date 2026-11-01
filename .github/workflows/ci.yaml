@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2025 René Moll
+# SPDX-FileCopyrightText: 2025-2026 René Moll
 # SPDX-License-Identifier: CC0-1.0
 #
 
@@ -10,6 +10,10 @@ on:
   pull_request:
   schedule:
     - cron: '25 1 * * SUN' # every Sunday at 01:25
+
+permissions:
+  contents: read
+  actions: read
 
 env:
   CATCH2_VERSION: 3.16.1
