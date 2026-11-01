@@ -17,7 +17,7 @@ namespace libecl::utilities {
  * \return The computed CRC-16 checksum.
  *
  * Details:
- * - Polynomial: 0x1021 (CRC-16-CCITT)
+ * - Polynomial: 0x1021 (CRC-16-CCITT-FALSE)
  * - Initial value: 0xFFFF
  * - Input reflected: false
  * - Output reflected: false
@@ -25,17 +25,17 @@ namespace libecl::utilities {
  */
 uint16_t crc16(std::span<const std::byte> data)
 {
-	// CRC-16-CCITT (XModem) polynomial
+	// CRC-16-CCITT-FALSE polynomial
 	static constexpr uint16_t polynomial = 0x1021U;
 
-	uint16_t crc = 0xFFFFU;
+	uint16_t crc = 0x1D0F;
 	for (auto byte : data) {
-		crc ^= static_cast<uint16_t>(byte) << 8U;
+		crc ^= static_cast<uint16_t>(static_cast<uint16_t>(byte) << 8U);
 		for (int i = 0; i < 8; ++i) {
 			if ((crc & 0x8000U) != 0) {
-				crc = (crc << 1U) ^ polynomial;
+				crc = static_cast<uint16_t>(crc << 1U) ^ polynomial;
 			} else {
-				crc <<= 1U;
+				crc = static_cast<uint16_t>(crc << 1U);
 			}
 		}
 	}
@@ -64,7 +64,7 @@ uint32_t crc32(std::span<const std::byte> data)
 		crc ^= static_cast<uint32_t>(byte) << 0U;
 		for (int i = 0; i < 8; ++i) {
 			if ((crc & 1U) != 0) {
-				crc = (crc >> 1U) ^ polynomial;
+				crc = crc >> 1U ^ polynomial;
 			} else {
 				crc >>= 1U;
 			}

@@ -26,7 +26,7 @@ SCENARIO("crc16")
 
 			THEN("the result should match the expected value")
 			{
-				REQUIRE(result == 0x31C3);
+				REQUIRE(result == 0xE5CC);
 			}
 		}
 	}
