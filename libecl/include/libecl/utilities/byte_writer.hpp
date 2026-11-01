@@ -76,7 +76,7 @@ public:
 	 */
 	[[nodiscard]] constexpr std::size_t position() const noexcept
 	{
-		return std::distance(m_buffer.data(), m_data.data());
+		return static_cast<std::size_t>(std::distance(m_buffer.data(), m_data.data()));
 	}
 
 	/*!
