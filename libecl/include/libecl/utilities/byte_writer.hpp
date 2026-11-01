@@ -32,7 +32,8 @@ public:
 	 * \param endianness  Endianness of the data in \a data_buffer.
 	 */
 	constexpr ByteWriter(std::span<std::byte> data_buffer, std::endian endianness)
-		: m_data{data_buffer}
+		: m_buffer{data_buffer}
+		, m_data{data_buffer}
 		, m_endianness{endianness}
 	{
 	}
@@ -69,7 +70,27 @@ public:
 		m_data = m_data.subspan(max);
 	}
 
+	/*!
+	 * \brief Returns the current write position within the buffer.
+	 * \return The number of bytes written so far.
+	 */
+	[[nodiscard]] constexpr std::size_t position() const noexcept
+	{
+		return std::distance(m_buffer.data(), m_data.data());
+	}
+
+	/*!
+	 * \brief Sets the current write position within the buffer.
+	 * \param position The position to seek to (or the maximum available, whichever is smaller.)
+	 */
+	constexpr void seek(std::size_t position) noexcept
+	{
+		const auto max = std::min(position, m_buffer.size());
+		m_data = m_buffer.subspan(max);
+	}
+
 private:
+	const std::span<std::byte> m_buffer;
 	std::span<std::byte> m_data;
 	std::endian m_endianness;
 
